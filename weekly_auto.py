@@ -108,7 +108,7 @@ def generate_pdf(plans_data, members_data, year, week, week_dates, prev_week_dat
 
         pdf.set_font('NanumGothic', 'B', 16)
         pdf.set_fill_color(230, 230, 250)
-        pdf.cell(0, 10, f'<<< {team_name} 팀 >>>', ln=True, align='C', fill=True)
+        pdf.cell(0, 10, f'<<< {team_name} >>>', ln=True, align='C', fill=True)
         pdf.ln(5)
 
         for member_data in team_members_in_group:
@@ -210,9 +210,9 @@ with st.sidebar:
 # --- 상단 헤더 (제목 및 PDF 저장 버튼) ---
 title_cols = st.columns([3, 1])
 with title_cols[0]:
-    st.title("🚀 Weekly Sync-Up")
+    st.title("Weekly Sync-Up🪄")
 with title_cols[1]:
-    if st.button("📄 PDF로 저장", type="primary", use_container_width=True):
+    if st.button("📄 현재 뷰 PDF로 저장", type="primary", use_container_width=True):
         if not os.path.exists(FONT_FILE):
             st.error(f"PDF 생성 오류: '{FONT_FILE}' 폰트 파일을 찾을 수 없습니다. app.py와 같은 폴더에 폰트 파일을 추가해주세요.")
         else:
@@ -252,7 +252,7 @@ with top_cols[0]:
         st.rerun()
 
 with top_cols[1]:
-    with st.expander("팀원 추가", expanded=True):
+    with st.expander("나의 주간 보고 작성하기", expanded=True):
         add_cols = st.columns([2, 2, 2, 1])
         new_name = add_cols[0].text_input("이름")
         new_rank = add_cols[1].selectbox("직급", RANK_ORDER)
@@ -272,18 +272,26 @@ st.markdown("---")
 # --- 삭제 확인 로직 ---
 if 'confirming_delete' in st.session_state and st.session_state.confirming_delete:
     member_to_delete = st.session_state.confirming_delete
-    st.warning(f"**⚠️ 경고: '{member_to_delete}'의 모든 주간계획 데이터를 영구적으로 삭제하시겠습니까?**")
+    selected_year = st.session_state.selected_date.isocalendar().year
+    selected_week = st.session_state.selected_date.isocalendar().week
+    
+    st.warning(f"**⚠️ 확인: '{member_to_delete}' 님의 이번 주({selected_year}년 {selected_week}주차) 데이터를 삭제하시겠습니까?** 팀원 목록에서는 제거되지 않습니다.")
     
     confirm_cols = st.columns(8)
-    if confirm_cols[0].button("예, 삭제합니다.", type="primary"):
-        st.session_state.all_data['team_members'] = [m for m in st.session_state.all_data.get('team_members', []) if isinstance(m, dict) and m.get('name') != member_to_delete]
-        for week_id in list(st.session_state.all_data.get('plans', {}).keys()):
-            if member_to_delete in st.session_state.all_data['plans'][week_id]:
-                del st.session_state.all_data['plans'][week_id][member_to_delete]
+    if confirm_cols[0].button("예, 완전히 삭제합니다.", type="primary"):
+        current_week_id = get_week_id(selected_year, selected_week)
         
-        save_data(st.session_state.all_data)
+        # 현재 주의 계획 데이터에서 해당 멤버의 데이터만 삭제
+        if current_week_id in st.session_state.all_data.get('plans', {}) and \
+           member_to_delete in st.session_state.all_data['plans'][current_week_id]:
+            
+            del st.session_state.all_data['plans'][current_week_id][member_to_delete]
+            save_data(st.session_state.all_data)
+            st.success(f"'{member_to_delete}' 님의 이번 주 데이터를 삭제했습니다.")
+        else:
+            st.warning("삭제할 데이터가 없습니다.")
+
         del st.session_state.confirming_delete
-        st.success(f"'{member_to_delete}' 님의 데이터를 삭제했습니다.")
         st.rerun()
 
     if confirm_cols[1].button("아니오"):
@@ -292,6 +300,8 @@ if 'confirming_delete' in st.session_state and st.session_state.confirming_delet
 
 # --- 메인 계획표 렌더링 ---
 else:
+    selected_year = st.session_state.selected_date.isocalendar().year
+    selected_week = st.session_state.selected_date.isocalendar().week
     current_week_id = get_week_id(selected_year, selected_week)
     week_dates = get_week_dates(st.session_state.selected_date)
     days, day_names = ['mon', 'tue', 'wed', 'thu', 'fri'], ['월', '화', '수', '목', '금']
@@ -314,7 +324,7 @@ else:
                 member_info = f"[{member_data.get('team', '')}] {member_data.get('rank', '')} {member_name}"
                 st.subheader(member_info)
             with member_info_cols[1]:
-                if st.button("삭제", key=f"delete_btn_{member_name}", type="secondary"):
+                if st.button("이번 주 데이터 삭제", key=f"delete_btn_{member_name}", type="secondary"):
                     st.session_state.confirming_delete = member_name
                     st.rerun()
 
@@ -371,10 +381,10 @@ else:
                 member_plan[key] = cols[1].text_area(f"{key}_{member_name}_{current_week_id}", value=member_plan.get(key, ""), placeholder=placeholder, height=height)
 
             st.markdown("<div style='margin-top: -8px;'></div>", unsafe_allow_html=True)
-            render_summary_row("지난주 리뷰 (수정 가능)", "lastWeekReview", "지난주의 '차주 계획'을 작성하지 않아 연동되지 않았습니다.", True)
-            render_summary_row("차주 계획", "nextWeekPlan", "다음 주 계획의 세부 내역을 구체적으로 작성해주세요. (주요 목표, 예상 산출물, 협업 계획 등)", False)
-            render_summary_row("본인 리뷰", "selfReview", "금주 이슈나 건의사항 등을 편하게 적어주세요.", False)
-            render_summary_row("부서장 리뷰", "managerReview", "이번 한 주도 고생 많으셨습니다.", False)
+            render_summary_row("지난주 리뷰 (수정 가능)", "lastWeekReview", "지난주 차주 계획을 작성하지 않아 연동되지 않았습니다.", True)
+            render_summary_row("차주 계획", "nextWeekPlan", "다음 주 계획의 세부 사항을 작성해주세요. (주요 목표, 예상 산출물, 협업 계획 등)", False)
+            render_summary_row("본인 리뷰", "selfReview", "스스로에 대한 리뷰 및 이슈, 건의사항을 편하게 작성해주세요.", False)
+            render_summary_row("부서장 리뷰", "managerReview", "이번 한 주도 고생 많으셨습니다.🚀", False)
             st.markdown("---")
         st.markdown("<br>", unsafe_allow_html=True)
 
