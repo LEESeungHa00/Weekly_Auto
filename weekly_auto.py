@@ -371,10 +371,10 @@ else:
                 member_plan[key] = cols[1].text_area(f"{key}_{member_name}_{current_week_id}", value=member_plan.get(key, ""), placeholder=placeholder, height=height)
 
             st.markdown("<div style='margin-top: -8px;'></div>", unsafe_allow_html=True)
-            render_summary_row("지난주 리뷰 (수정 가능)", "lastWeekReview", "지난주의 '차주 계획'이 자동으로 채워집니다.", True)
-            render_summary_row("차주 계획", "nextWeekPlan", "다음 주 계획을 구체적으로 작성해주세요. (주요 목표, 예상 산출물, 협업 계획 등)", False)
-            render_summary_row("본인 리뷰", "selfReview", "", False)
-            render_summary_row("부서장 리뷰", "managerReview", "", False)
+            render_summary_row("지난주 리뷰 (수정 가능)", "lastWeekReview", "지난주의 '차주 계획'을 작성하지 않아 연동되지 않았습니다.", True)
+            render_summary_row("차주 계획", "nextWeekPlan", "다음 주 계획의 세부 내역을 구체적으로 작성해주세요. (주요 목표, 예상 산출물, 협업 계획 등)", False)
+            render_summary_row("본인 리뷰", "selfReview", "금주 이슈나 건의사항 등을 편하게 적어주세요.", False)
+            render_summary_row("부서장 리뷰", "managerReview", "이번 한 주도 고생 많으셨습니다.", False)
             st.markdown("---")
         st.markdown("<br>", unsafe_allow_html=True)
 
