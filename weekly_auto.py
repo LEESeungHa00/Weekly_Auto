@@ -52,6 +52,7 @@ st.markdown("""
 # --- 데이터 및 상수 정의 ---
 DATA_FILE = "plans_data.json"
 TEAM_ORDER = ["Team종철", "AE/AM", "BDR", "GD", "BSA"]
+FONT_FILE = "NanumGothic.ttf"
 
 def load_data():
     """JSON 파일에서 모든 데이터를 불러옵니다."""
@@ -79,11 +80,8 @@ def generate_pdf(plans_data, members_data, year, week, week_dates, day_names, te
     """현재 주의 계획 데이터를 팀별로 정렬하여 PDF 파일로 생성합니다."""
     pdf = FPDF()
     
-    try:
-        pdf.add_font('NanumGothic', '', 'NanumGothic.ttf', uni=True)
-    except RuntimeError:
-        st.error("PDF 생성 오류: 'NanumGothic.ttf' 폰트 파일을 찾을 수 없습니다. app.py와 같은 폴더에 폰트 파일을 추가해주세요.")
-        return None
+    # PDF에서 한글을 사용하기 위해 폰트 추가
+    pdf.add_font('NanumGothic', '', FONT_FILE, uni=True)
     
     pdf.add_page()
     pdf.set_font('NanumGothic', '', 20)
@@ -198,22 +196,38 @@ with top_cols[1]:
                 st.session_state.all_data['team_members'].append({"name": new_name, "rank": new_rank, "team": new_team})
                 save_data(st.session_state.all_data); st.rerun()
         st.markdown("---")
-        member_to_delete = st.selectbox("삭제할 팀원 선택", [m['name'] for m in st.session_state.all_data['team_members']])
-        if st.button("선택한 팀원 삭제", type="secondary"):
-            st.session_state.all_data['team_members'] = [m for m in st.session_state.all_data['team_members'] if m['name'] != member_to_delete]
-            save_data(st.session_state.all_data); st.rerun()
         
+        # Get the list of team members safely
+        team_members_list = st.session_state.all_data.get('team_members', [])
+        member_names = []
+        # Ensure it's a list of dicts before creating the name list
+        if isinstance(team_members_list, list):
+            member_names = [m.get('name') for m in team_members_list if isinstance(m, dict) and m.get('name')]
+
+        if member_names:
+            member_to_delete = st.selectbox("삭제할 팀원 선택", member_names)
+            if st.button("선택한 팀원 삭제", type="secondary"):
+                # The list comprehension for deletion needs the original list of dicts
+                st.session_state.all_data['team_members'] = [m for m in team_members_list if m.get('name') != member_to_delete]
+                save_data(st.session_state.all_data)
+                st.rerun()
+        else:
+            st.info("삭제할 팀원이 없습니다.")
+
         st.markdown("---")
-        current_week_id_for_pdf = get_week_id(st.session_state.current_year, st.session_state.current_week)
+        # PDF 다운로드 버튼 로직 수정
         if st.button("현재 뷰 PDF로 저장", type="primary"):
-            pdf_data = generate_pdf(
-                st.session_state.all_data['plans'].get(current_week_id_for_pdf, {}),
-                st.session_state.all_data['team_members'],
-                st.session_state.current_year, st.session_state.current_week,
-                get_week_dates(st.session_state.current_year, st.session_state.current_week),
-                ['월', '화', '수', '목', '금'], TEAM_ORDER
-            )
-            if pdf_data:
+            if not os.path.exists(FONT_FILE):
+                st.error(f"PDF 생성 오류: '{FONT_FILE}' 폰트 파일을 찾을 수 없습니다. app.py와 같은 폴더에 폰트 파일을 추가해주세요.")
+            else:
+                current_week_id_for_pdf = get_week_id(st.session_state.current_year, st.session_state.current_week)
+                pdf_data = generate_pdf(
+                    st.session_state.all_data['plans'].get(current_week_id_for_pdf, {}),
+                    st.session_state.all_data['team_members'],
+                    st.session_state.current_year, st.session_state.current_week,
+                    get_week_dates(st.session_state.current_year, st.session_state.current_week),
+                    ['월', '화', '수', '목', '금'], TEAM_ORDER
+                )
                 st.download_button("PDF 다운로드 준비 완료", pdf_data, f"weekly_plan_{current_week_id_for_pdf}.pdf", "application/pdf")
 
 st.markdown("---")
