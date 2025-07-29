@@ -1,2 +1,2 @@
 streamlit
-FDPF
+fpdf2
