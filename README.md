@@ -9,7 +9,11 @@ Weekly Sync-Up 🪄
 <em>"구글 시트의 수동 복붙과 충돌 지옥에서 벗어나, 우리 팀의 주간 동기화를 자동화하세요."</em>
 </p>
 
-🤔 무엇이 문제였을까요? (The Problem)
+<p align="center">
+<img src="https://placehold.co/800x450/2d3748/ffffff?text=Demo+GIF" alt="Demo GIF">
+</p>
+
+🤔 Why This Project?
 기존의 공유 문서(Google Docs/Sheet) 기반 주간 보고 방식은 여러 문제를 야기했습니다.
 
 수동 복붙의 늪: 매주 지난주 계획을 이번 주 리뷰로 옮기는 반복적이고 실수하기 쉬운 작업.
@@ -22,20 +26,20 @@ Weekly Sync-Up 🪄
 
 이러한 비효율을 해결하고, 팀이 핵심 업무에만 집중할 수 있도록 돕는 자동화 툴을 만들었습니다.
 
-✨ 주요 기능 (Key Features)
-🔄 자동 데이터 연동: 버튼 하나로 지난주 계획이 이번 주 리뷰로, 차주 계획이 다음 주 리뷰로 자동 연동됩니다.
+✨ Key Features
+🔄 **자동 데이터 연동**: 버튼 하나로 지난주 계획이 이번 주 리뷰로, 차주 계획이 다음 주 리뷰로 자동 연동됩니다.
 
-👥 팀/직급별 정렬 뷰: 팀별, 그리고 팀 내 직급 순으로 보고서가 자동 정렬되어 가독성과 체계성을 극대화했습니다.
+👥 **팀/직급별 정렬 뷰**: 팀별, 그리고 팀 내 직급 순으로 보고서가 자동 정렬되어 가독성과 체계성을 극대화했습니다.
 
-📄 원클릭 PDF 보고서: 현재 보고 있는 주차의 모든 내용을 클릭 한 번으로 깔끔한 PDF 파일로 다운로드할 수 있습니다.
+📄 **원클릭 PDF 보고서**: 현재 보고 있는 주차의 모든 내용을 클릭 한 번으로 깔끔한 PDF 파일로 다운로드할 수 있습니다.
 
-🗓️ 직관적인 UI/UX: 복잡한 메뉴를 없애고, 현재 주차에 집중하면서도 사이드바를 통해 과거 기록을 쉽게 조회할 수 있습니다.
+🗓️ **직관적인 UI/UX:** 복잡한 메뉴를 없애고, 현재 주차에 집중하면서도 사이드바를 통해 과거 기록을 쉽게 조회할 수 있습니다.
 
-💾 영구 데이터 저장: 모든 내용은 plans_data.json 파일에 안전하게 저장되어 언제든지 다시 작업을 이어갈 수 있습니다.
+💾 **영구 데이터 저장**: 모든 내용은 plans_data.json 파일에 안전하게 저장되어 언제든지 다시 작업을 이어갈 수 있습니다.
 
-🤖 슬랙 알림 자동화: GitHub Actions를 통해 매주 금요일, 지정된 슬랙 채널로 주간 보고 작성 알림을 자동으로 보냅니다.
+🤖 **슬랙 알림 자동화:** GitHub Actions를 통해 매주 금요일, 지정된 슬랙 채널로 주간 보고 작성 알림을 자동으로 보냅니다.
 
-🛠️ 기술 스택 (Tech Stack)
+🛠️ Tech Stack
 Core: Python, Streamlit
 
 Data: JSON
@@ -44,7 +48,7 @@ PDF Export: FPDF2
 
 Automation: GitHub Actions
 
-🚀 시작하기 (Getting Started)
+🚀 Getting Started
 1. 로컬에서 실행하기
 Prerequisites:
 
@@ -75,12 +79,12 @@ Streamlit Community Cloud에 GitHub 계정으로 로그인합니다.
 배포가 완료되면 팀원들과 공유할 수 있는 영구적인 URL이 생성됩니다.
 
 중요: requirements.txt 파일에 streamlit과 fpdf2가 포함되어 있는지, NanumGothic.ttf 폰트 파일이 저장소에 함께 업로드되었는지 반드시 확인하세요!
+**
+🤖 Slack Notification Setup**
+> Slack Incoming Webhooks를 통해 Webhook URL을 발급받으세요.
 
-🤖 슬랙 알림 설정하기
-Slack Incoming Webhooks를 통해 Webhook URL을 발급받으세요.
+- 당신의 GitHub 저장소 > Settings > Secrets and variables > Actions 로 이동합니다.
 
-당신의 GitHub 저장소 > Settings > Secrets and variables > Actions 로 이동합니다.
+- New repository secret 버튼을 눌러, 이름은 SLACK_WEBHOOK_URL 로, 값은 위에서 발급받은 Webhook URL로 저장하세요.
 
-New repository secret 버튼을 눌러, 이름은 SLACK_WEBHOOK_URL 로, 값은 위에서 발급받은 Webhook URL로 저장하세요.
-
-.github/workflows/slack_notifier.yml 파일이 매주 금요일 오전 10시에 자동으로 알림을 보냅니다.
+- .github/workflows/slack_notifier.yml 파일이 매주 금요일 오전 10시에 자동으로 알림을 보냅니다.
