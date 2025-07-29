@@ -58,17 +58,27 @@ def load_data():
     """JSON 파일에서 모든 데이터를 불러옵니다."""
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
+            try:
+                # 파일이 비어있는 경우를 대비
+                content = f.read()
+                if not content:
+                    return create_default_data()
+                return json.loads(content)
+            except json.JSONDecodeError:
+                return create_default_data() # 파일이 손상된 경우 기본 데이터 반환
     else:
-        # 팀별 그룹화를 보여주기 위한 기본 데이터
-        return {
-            "team_members": [
-                {"name": "이종철", "rank": "책임", "team": "Team종철"},
-                {"name": "배하얀", "rank": "사원", "team": "AE/AM"},
-                {"name": "신부현", "rank": "선임", "team": "BSA"}
-            ],
-            "plans": {}
-        }
+        return create_default_data()
+
+def create_default_data():
+    """기본 데이터 구조를 생성합니다."""
+    return {
+        "team_members": [
+            {"name": "이종철", "rank": "책임", "team": "Team종철"},
+            {"name": "배하얀", "rank": "사원", "team": "AE/AM"},
+            {"name": "신부현", "rank": "선임", "team": "BSA"}
+        ],
+        "plans": {}
+    }
 
 def save_data(data):
     """모든 데이터를 JSON 파일에 저장합니다."""
@@ -89,7 +99,7 @@ def generate_pdf(plans_data, members_data, year, week, week_dates, day_names, te
     pdf.ln(10)
 
     for team_name in team_order:
-        team_members_in_group = [m for m in members_data if m['team'] == team_name]
+        team_members_in_group = [m for m in members_data if m.get('team') == team_name]
         if not team_members_in_group:
             continue
 
@@ -100,12 +110,12 @@ def generate_pdf(plans_data, members_data, year, week, week_dates, day_names, te
         pdf.ln(5)
 
         for member_data in team_members_in_group:
-            member_name = member_data['name']
-            if member_name not in plans_data:
+            member_name = member_data.get('name')
+            if not member_name or member_name not in plans_data:
                 continue
 
             member_plan = plans_data[member_name]
-            member_info = f"[{member_data['team']}] {member_data['rank']} {member_data['name']}"
+            member_info = f"[{member_data.get('team', '')}] {member_data.get('rank', '')} {member_name}"
 
             pdf.set_font('NanumGothic', '', 14)
             pdf.cell(0, 10, member_info, ln=True, align='L')
@@ -117,8 +127,8 @@ def generate_pdf(plans_data, members_data, year, week, week_dates, day_names, te
             pdf.cell(0, 8, '주간 계획', ln=True, fill=True, border=1, align='C')
             pdf.set_font('NanumGothic', '', 10)
             for i, day_key in enumerate(['mon', 'tue', 'wed', 'thu', 'fri']):
-                am_content = member_plan['grid'].get(f'{day_key}_am', '')
-                pm_content = member_plan['grid'].get(f'{day_key}_pm', '')
+                am_content = member_plan.get('grid', {}).get(f'{day_key}_am', '')
+                pm_content = member_plan.get('grid', {}).get(f'{day_key}_pm', '')
                 if am_content or pm_content:
                     pdf.set_font('NanumGothic', 'B', 10)
                     pdf.multi_cell(0, 6, f'{day_names[i]} ({week_dates[i]})')
@@ -192,9 +202,21 @@ with top_cols[1]:
         new_rank = add_cols[1].selectbox("직급", ["인턴", "사원", "대리", "선임", "책임", "기타"])
         new_team = add_cols[2].selectbox("팀", TEAM_ORDER)
         if add_cols[3].button("생성"):
-            if new_name and not any(m['name'] == new_name for m in st.session_state.all_data['team_members']):
-                st.session_state.all_data['team_members'].append({"name": new_name, "rank": new_rank, "team": new_team})
-                save_data(st.session_state.all_data); st.rerun()
+            # 'team_members' 키가 없는 경우를 대비하여 안전하게 초기화
+            if 'team_members' not in st.session_state.all_data or not isinstance(st.session_state.all_data.get('team_members'), list):
+                st.session_state.all_data['team_members'] = []
+            
+            team_members_list = st.session_state.all_data['team_members']
+            
+            if new_name and not any(m.get('name') == new_name for m in team_members_list):
+                team_members_list.append({"name": new_name, "rank": new_rank, "team": new_team})
+                save_data(st.session_state.all_data)
+                st.rerun()
+            elif not new_name:
+                st.warning("이름을 입력해주세요.")
+            else:
+                st.warning(f"'{new_name}' 이름의 팀원이 이미 존재합니다.")
+
         st.markdown("---")
         
         # Get the list of team members safely
@@ -241,13 +263,15 @@ if current_week_id not in st.session_state.all_data['plans']:
     st.session_state.all_data['plans'][current_week_id] = {}
 
 for team_name in TEAM_ORDER:
-    team_members_in_group = [m for m in st.session_state.all_data['team_members'] if m['team'] == team_name]
+    team_members_in_group = [m for m in st.session_state.all_data.get('team_members', []) if isinstance(m, dict) and m.get('team') == team_name]
     if not team_members_in_group: continue
 
     st.title(f"<{team_name} 팀>")
     for member_data in team_members_in_group:
-        member_name = member_data['name']
-        member_info = f"[{member_data['team']}] {member_data['rank']} {member_data['name']}"
+        member_name = member_data.get('name')
+        if not member_name: continue
+        
+        member_info = f"[{member_data.get('team', '')}] {member_data.get('rank', '')} {member_name}"
         st.subheader(member_info)
 
         if member_name not in st.session_state.all_data['plans'][current_week_id]:
@@ -257,11 +281,12 @@ for team_name in TEAM_ORDER:
             prev_week_id = get_week_id(prev_year, prev_week)
             if prev_week_id in st.session_state.all_data['plans'] and member_name in st.session_state.all_data['plans'][prev_week_id]:
                 prev_data = st.session_state.all_data['plans'][prev_week_id][member_name]
-                work_summary = [f"{day_names[i]} - " + (f"오전: {prev_data['grid'].get(f'{d}_am', '')}" if prev_data['grid'].get(f'{d}_am', '') else "") + (" / " if prev_data['grid'].get(f'{d}_am', '') and prev_data['grid'].get(f'{d}_pm', '') else "") + (f"오후: {prev_data['grid'].get(f'{d}_pm', '')}" if prev_data['grid'].get(f'{d}_pm', '') else "") for i, d in enumerate(days) if prev_data['grid'].get(f'{d}_am', '') or prev_data['grid'].get(f'{d}_pm', '')]
-                st.session_state.all_data['plans'][current_week_id][member_name]['lastWeekWork'] = "\n".join(work_summary)
-                st.session_state.all_data['plans'][current_week_id][member_name]['lastWeekReview'] = prev_data.get('nextWeekPlan', '')
+                if isinstance(prev_data, dict):
+                    work_summary = [f"{day_names[i]} - " + (f"오전: {prev_data.get('grid', {}).get(f'{d}_am', '')}" if prev_data.get('grid', {}).get(f'{d}_am', '') else "") + (" / " if prev_data.get('grid', {}).get(f'{d}_am', '') and prev_data.get('grid', {}).get(f'{d}_pm', '') else "") + (f"오후: {prev_data.get('grid', {}).get(f'{d}_pm', '')}" if prev_data.get('grid', {}).get(f'{d}_pm', '') else "") for i, d in enumerate(days) if prev_data.get('grid', {}).get(f'{d}_am', '') or prev_data.get('grid', {}).get(f'{d}_pm', '')]
+                    st.session_state.all_data['plans'][current_week_id][member_name]['lastWeekWork'] = "\n".join(work_summary)
+                    st.session_state.all_data['plans'][current_week_id][member_name]['lastWeekReview'] = prev_data.get('nextWeekPlan', '')
 
-        member_plan = st.session_state.all_data['plans'][current_week_id][member_name]
+        member_plan = st.session_state.all_data['plans'][current_week_id].get(member_name, {})
 
         grid_cols = st.columns([0.1] + [0.18] * 5)
         grid_cols[0].markdown("<div class='header-base header-default header-day'><b>구분</b></div>", unsafe_allow_html=True)
@@ -272,8 +297,9 @@ for team_name in TEAM_ORDER:
         am_cols[0].markdown("<div class='header-base header-default header-time'><b>오전</b></div>", unsafe_allow_html=True)
         pm_cols[0].markdown("<div class='header-base header-default header-time'><b>오후</b></div>", unsafe_allow_html=True)
         for i, day in enumerate(days):
-            member_plan['grid'][f'{day}_am'] = am_cols[i+1].text_area(f"grid_{member_name}_{day}_am_{current_week_id}", value=member_plan['grid'].get(f'{day}_am', ''), height=120)
-            member_plan['grid'][f'{day}_pm'] = pm_cols[i+1].text_area(f"grid_{member_name}_{day}_pm_{current_week_id}", value=member_plan['grid'].get(f'{day}_pm', ''), height=120)
+            if 'grid' not in member_plan: member_plan['grid'] = {}
+            member_plan['grid'][f'{day}_am'] = am_cols[i+1].text_area(f"grid_{member_name}_{day}_am_{current_week_id}", value=member_plan.get('grid', {}).get(f'{day}_am', ''), height=120)
+            member_plan['grid'][f'{day}_pm'] = pm_cols[i+1].text_area(f"grid_{member_name}_{day}_pm_{current_week_id}", value=member_plan.get('grid', {}).get(f'{day}_pm', ''), height=120)
 
         def render_summary_row(label, key, placeholder, is_auto, height=140):
             header_class = "header-automated" if is_auto else "header-default"
