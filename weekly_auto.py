@@ -132,7 +132,7 @@ def generate_pdf(plans_data, members_data, year, week, week_dates, prev_week_dat
                 pm = member_plan.get('grid', {}).get(f'{day_key}_pm', '')
                 if am or pm:
                     pdf.set_font('NanumGothic', 'B', 10)
-                    pdf.multi_cell(0, 6, f'{day_names[i]} ({week_dates[i]})')
+                    pdf.multi_cell(0, 6, f'{day_names[i]}({week_dates[i]})')
                     pdf.set_font('NanumGothic', '', 10)
                     if am: pdf.multi_cell(0, 5, f'  오전: {am}')
                     if pm: pdf.multi_cell(0, 5, f'  오후: {pm}')
@@ -148,7 +148,7 @@ def generate_pdf(plans_data, members_data, year, week, week_dates, prev_week_dat
                 pm = member_plan.get('lastWeekGrid', {}).get(f'{day_key}_pm', '')
                 if am or pm:
                     pdf.set_font('NanumGothic', 'B', 10)
-                    pdf.multi_cell(0, 6, f'{day_names[i]} ({prev_week_dates[i]})')
+                    pdf.multi_cell(0, 6, f'{day_names[i]}({prev_week_dates[i]})')
                     pdf.set_font('NanumGothic', '', 10)
                     if am: pdf.multi_cell(0, 5, f'  오전: {am}')
                     if pm: pdf.multi_cell(0, 5, f'  오후: {pm}')
@@ -337,7 +337,7 @@ else:
             grid_cols = st.columns([0.1] + [0.18] * 5)
             grid_cols[0].markdown("<div class='header-base header-default header-day'><b>구분</b></div>", unsafe_allow_html=True)
             for i, name in enumerate(day_names):
-                grid_cols[i+1].markdown(f"<div class='header-base header-default header-day'><b>{name}</b><br>({week_dates[i]})</div>", unsafe_allow_html=True)
+                grid_cols[i+1].markdown(f"<div class='header-base header-default header-day'><b>{name}({week_dates[i]})</b></div>", unsafe_allow_html=True)
             
             am_cols, pm_cols = st.columns([0.1] + [0.18] * 5), st.columns([0.1] + [0.18] * 5)
             am_cols[0].markdown("<div class='header-base header-default header-time'><b>오전</b></div>", unsafe_allow_html=True)
@@ -354,7 +354,7 @@ else:
             last_week_grid_cols = st.columns([0.1] + [0.18] * 5)
             last_week_grid_cols[0].markdown("<div class='header-base header-automated header-day'><b>구분</b></div>", unsafe_allow_html=True)
             for i, name in enumerate(day_names):
-                last_week_grid_cols[i+1].markdown(f"<div class='header-base header-automated header-day'><b>{name}</b><br>({last_week_dates[i]})</div>", unsafe_allow_html=True)
+                last_week_grid_cols[i+1].markdown(f"<div class='header-base header-automated header-day'><b>{name}({last_week_dates[i]})</b></div>", unsafe_allow_html=True)
             
             last_am_cols, last_pm_cols = st.columns([0.1] + [0.18] * 5), st.columns([0.1] + [0.18] * 5)
             last_am_cols[0].markdown("<div class='header-base header-automated header-time'><b>오전</b></div>", unsafe_allow_html=True)
