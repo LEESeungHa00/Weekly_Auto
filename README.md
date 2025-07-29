@@ -1,5 +1,5 @@
 <p align="center">
- <em> # Weekly Sync-Up 🪄 </em>
+ <em> **Weekly Sync-Up** 🪄 </em>
 <p align="center">
 <img src="https://img.shields.io/badge/Python-3.9%2B-blue?style=for-the-badge&logo=python" alt="Python Version">
 <img src="https://img.shields.io/badge/Streamlit-1.30%2B-ff4b4b?style=for-the-badge&logo=streamlit" alt="Streamlit Version">
