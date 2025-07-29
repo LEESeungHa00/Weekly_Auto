@@ -211,7 +211,7 @@ with st.sidebar:
 # --- 메인 페이지 UI ---
 title_cols = st.columns([3, 1])
 with title_cols[0]:
-    st.title("Weekly Sync-Up🪄")
+    st.title("Weekly Sync-Up")
 with title_cols[1]:
     if st.button("📄 현재 뷰 PDF로 저장", type="primary", use_container_width=True):
         if not os.path.exists(FONT_FILE):
@@ -250,7 +250,7 @@ with top_cols[0]:
         st.rerun()
 
 with top_cols[1]:
-    with st.expander("이번 주 보고서 추가", expanded=True):
+    with st.expander("🪄 주간보고 생성하기", expanded=True):
         add_cols = st.columns([2, 2, 2, 1])
         new_name = add_cols[0].text_input("이름")
         new_rank = add_cols[1].selectbox("직급", RANK_ORDER)
@@ -320,7 +320,7 @@ else:
                 member_info = f"[{member_data.get('team', '')}] {member_name} {member_data.get('rank', '')}"
                 st.subheader(member_info)
             with member_info_cols[1]:
-                if st.button("이번 주 보고서 삭제", key=f"delete_btn_{member_name}", type="secondary"):
+                if st.button("보고서 삭제", key=f"delete_btn_{member_name}", type="secondary"):
                     st.session_state.confirming_delete = member_name
                     st.rerun()
 
