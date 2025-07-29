@@ -9,11 +9,9 @@ Weekly Sync-Up 🪄
 <em>"구글 시트의 수동 복붙과 충돌 지옥에서 벗어나, 우리 팀의 주간 동기화를 자동화하세요."</em>
 </p>
 
-<p align="center">
-<img src="https://placehold.co/800x450/2d3748/ffffff?text=Demo+GIF" alt="Demo GIF">
 </p>
 
-🤔 Why This Project?
+🤔** Why This Project?**
 기존의 공유 문서(Google Docs/Sheet) 기반 주간 보고 방식은 여러 문제를 야기했습니다.
 
 수동 복붙의 늪: 매주 지난주 계획을 이번 주 리뷰로 옮기는 반복적이고 실수하기 쉬운 작업.
@@ -64,7 +62,7 @@ cd weekly-sync-up
 pip install -r requirements.txt
 
 # 3. 나눔고딕 폰트 파일을 프로젝트 폴더에 다운로드합니다.
-# https://hangeul.naver.com/font
+ https://hangeul.naver.com/font
 
 # 4. Streamlit 앱을 실행합니다.
 streamlit run app.py
