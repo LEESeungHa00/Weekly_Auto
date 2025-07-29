@@ -236,7 +236,7 @@ with st.sidebar:
 # --- 메인 페이지 UI ---
 title_cols = st.columns([3, 1])
 with title_cols[0]:
-    st.title("Weekly Sync-Up🪄")
+    st.title("Weekly Sync-Up")
     st.caption ("ctrl+f 로 본인 이름을 검색해 빠르게 이동하세요.")
 with title_cols[1]:
     if st.button("📄 현재 뷰 PDF로 저장", type="primary", use_container_width=True):
