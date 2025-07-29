@@ -310,7 +310,7 @@ else:
         
         if not team_members_in_group: continue
 
-        st.title(f"<{team_name} 팀>")
+        st.title(f"<{team_name}>")
         for member_data in team_members_in_group:
             member_name = member_data.get('name')
             if not member_name: continue
