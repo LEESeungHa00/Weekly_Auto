@@ -78,9 +78,9 @@ def create_default_data():
     return {
         "team_members": [
             {"name": "이종철", "rank": "책임", "team": "Team종철"},
-            {"name": "김대리", "rank": "대리", "team": "AE/AM"},
-            {"name": "박사원", "rank": "사원", "team": "AE/AM"},
-            {"name": "이선임", "rank": "선임", "team": "BSA"}
+            {"name": "배하란", "rank": "선임", "team": "AE/AM"},
+            {"name": "오동민", "rank": "대리", "team": "GD"},
+            {"name": "이승하", "rank": "사원", "team": "BSA"}
         ],
         "plans": {}
     }
@@ -116,7 +116,7 @@ def generate_pdf(plans_data, members_data, year, week, week_dates, prev_week_dat
             if not member_name or member_name not in plans_data: continue
 
             member_plan = plans_data[member_name]
-            member_info = f"[{member_data.get('team', '')}] {member_data.get('rank', '')} {member_name}"
+            member_info = f"[{member_data.get('team', '')}] {member_name} {member_data.get('rank', '')}"
 
             pdf.set_font('NanumGothic', '', 14)
             pdf.cell(0, 10, member_info, ln=True, align='L')
@@ -210,9 +210,9 @@ with st.sidebar:
 # --- 상단 헤더 (제목 및 PDF 저장 버튼) ---
 title_cols = st.columns([3, 1])
 with title_cols[0]:
-    st.title("🚀 자동 주간 계획서")
+    st.title("🚀 Weekly Sync-Up")
 with title_cols[1]:
-    if st.button("📄 현재 뷰 PDF로 저장", type="primary", use_container_width=True):
+    if st.button("📄 PDF로 저장", type="primary", use_container_width=True):
         if not os.path.exists(FONT_FILE):
             st.error(f"PDF 생성 오류: '{FONT_FILE}' 폰트 파일을 찾을 수 없습니다. app.py와 같은 폴더에 폰트 파일을 추가해주세요.")
         else:
@@ -241,13 +241,13 @@ with top_cols[0]:
     selected_week = st.session_state.selected_date.isocalendar().week
 
     nav_cols = st.columns([1, 2, 1])
-    if nav_cols[0].button("◀️ 이전 주", use_container_width=True):
+    if nav_cols[0].button("◀ 지난주", use_container_width=True):
         st.session_state.selected_date -= timedelta(weeks=1)
         st.rerun()
 
     nav_cols[1].markdown(f"<h3 style='text-align: center; margin-top: 0.5rem;'>{selected_year}년 {selected_week}주차</h3>", unsafe_allow_html=True)
 
-    if nav_cols[2].button("다음 주 ▶️", use_container_width=True):
+    if nav_cols[2].button("다음주 ▶", use_container_width=True):
         st.session_state.selected_date += timedelta(weeks=1)
         st.rerun()
 
