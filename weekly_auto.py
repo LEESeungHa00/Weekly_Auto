@@ -324,7 +324,7 @@ else:
                 member_info = f"[{member_data.get('team', '')}] {member_data.get('rank', '')} {member_name}"
                 st.subheader(member_info)
             with member_info_cols[1]:
-                if st.button("이번 주 데이터 삭제", key=f"delete_btn_{member_name}", type="secondary"):
+                if st.button("삭제", key=f"delete_btn_{member_name}", type="secondary"):
                     st.session_state.confirming_delete = member_name
                     st.rerun()
 
