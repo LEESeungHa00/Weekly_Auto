@@ -1,4 +1,5 @@
-Weekly Sync-Up 🪄
+<p align="center">
+ <em> #Weekly Sync-Up 🪄 </em>
 <p align="center">
 <img src="https://img.shields.io/badge/Python-3.9%2B-blue?style=for-the-badge&logo=python" alt="Python Version">
 <img src="https://img.shields.io/badge/Streamlit-1.30%2B-ff4b4b?style=for-the-badge&logo=streamlit" alt="Streamlit Version">
@@ -11,7 +12,8 @@ Weekly Sync-Up 🪄
 
 </p>
 
-🤔** Why This Project?**
+🤔**Why This Project?**
+
 기존의 공유 문서(Google Docs/Sheet) 기반 주간 보고 방식은 여러 문제를 야기했습니다.
 
 수동 복붙의 늪: 매주 지난주 계획을 이번 주 리뷰로 옮기는 반복적이고 실수하기 쉬운 작업.
@@ -46,7 +48,7 @@ PDF Export: FPDF2
 
 Automation: GitHub Actions
 
-🚀 Getting Started
+🚀 **Getting Started**
 1. 로컬에서 실행하기
 Prerequisites:
 
@@ -77,9 +79,9 @@ Streamlit Community Cloud에 GitHub 계정으로 로그인합니다.
 배포가 완료되면 팀원들과 공유할 수 있는 영구적인 URL이 생성됩니다.
 
 중요: requirements.txt 파일에 streamlit과 fpdf2가 포함되어 있는지, NanumGothic.ttf 폰트 파일이 저장소에 함께 업로드되었는지 반드시 확인하세요!
-**
-🤖 Slack Notification Setup**
-> Slack Incoming Webhooks를 통해 Webhook URL을 발급받으세요.
+
+🤖 **Slack Notification Setup**
+- Slack Incoming Webhooks를 통해 Webhook URL을 발급받으세요.
 
 - 당신의 GitHub 저장소 > Settings > Secrets and variables > Actions 로 이동합니다.
 
