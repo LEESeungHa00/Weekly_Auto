@@ -45,6 +45,11 @@ st.markdown("""
         min-height: 100px; /* 최소 높이 지정, 사용자가 수동으로 조절 가능 */
         resize: vertical;
     }
+    /* 비활성화된 텍스트 영역 스타일 */
+    div[data-testid="stTextArea"] > div > textarea:disabled {
+        background-color: #f0f0f0;
+        color: #555;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -73,10 +78,9 @@ def create_default_data():
     return {
         "team_members": [
             {"name": "이종철", "rank": "책임", "team": "Team종철"},
-            {"name": "박사원", "rank": "사원", "team": "AE/AM"},
             {"name": "김대리", "rank": "대리", "team": "AE/AM"},
-            {"name": "이선임", "rank": "선임", "team": "AE/AM"},
-            {"name": "신부현", "rank": "선임", "team": "BSA"}
+            {"name": "박사원", "rank": "사원", "team": "AE/AM"},
+            {"name": "이선임", "rank": "선임", "team": "BSA"}
         ],
         "plans": {}
     }
@@ -99,7 +103,6 @@ def generate_pdf(plans_data, members_data, year, week, week_dates, day_names, te
 
     for team_name in team_order:
         team_members_in_group = [m for m in members_data if isinstance(m, dict) and m.get('team') == team_name]
-        # 직급 순으로 정렬
         team_members_in_group.sort(key=lambda m: RANK_ORDER.index(m.get('rank', '기타')) if m.get('rank') in RANK_ORDER else len(RANK_ORDER))
         if not team_members_in_group: continue
 
@@ -119,9 +122,26 @@ def generate_pdf(plans_data, members_data, year, week, week_dates, day_names, te
             pdf.cell(0, 10, member_info, ln=True, align='L')
             pdf.ln(2)
 
+            # 지난주 업무 내역 그리드
+            pdf.set_font('NanumGothic', 'B', 11)
+            pdf.set_fill_color(153, 50, 204)
+            pdf.cell(0, 8, '지난주 업무 내역', ln=True, fill=True, border=1, align='C')
+            pdf.set_font('NanumGothic', '', 10)
+            for i, day_key in enumerate(['mon', 'tue', 'wed', 'thu', 'fri']):
+                am = member_plan.get('lastWeekGrid', {}).get(f'{day_key}_am', '')
+                pm = member_plan.get('lastWeekGrid', {}).get(f'{day_key}_pm', '')
+                if am or pm:
+                    pdf.set_font('NanumGothic', 'B', 10)
+                    pdf.multi_cell(0, 6, f'{day_names[i]} ({week_dates[i]})')
+                    pdf.set_font('NanumGothic', '', 10)
+                    if am: pdf.multi_cell(0, 5, f'  오전: {am}')
+                    if pm: pdf.multi_cell(0, 5, f'  오후: {pm}')
+            pdf.ln(5)
+            
+            # 이번주 계획 그리드
             pdf.set_font('NanumGothic', 'B', 11)
             pdf.set_fill_color(70, 130, 180)
-            pdf.cell(0, 8, '주간 계획', ln=True, fill=True, border=1, align='C')
+            pdf.cell(0, 8, '이번주 계획', ln=True, fill=True, border=1, align='C')
             pdf.set_font('NanumGothic', '', 10)
             for i, day_key in enumerate(['mon', 'tue', 'wed', 'thu', 'fri']):
                 am = member_plan.get('grid', {}).get(f'{day_key}_am', '')
@@ -142,7 +162,6 @@ def generate_pdf(plans_data, members_data, year, week, week_dates, day_names, te
                 pdf.multi_cell(0, 6, content if content else ' ')
                 pdf.ln(3)
 
-            draw_summary_section("지난주 업무 내역", member_plan.get("lastWeekWork", ""), True)
             draw_summary_section("지난주 리뷰", member_plan.get("lastWeekReview", ""), True)
             draw_summary_section("차주 계획", member_plan.get("nextWeekPlan", ""), False)
             draw_summary_section("본인 리뷰", member_plan.get("selfReview", ""), False)
@@ -233,7 +252,7 @@ with top_cols[1]:
 
 st.markdown("---")
 
-# --- 메인 계획표 렌더링 (팀별, 직급별 그룹화 적용) ---
+# --- 메인 계획표 렌더링 ---
 current_week_id = get_week_id(st.session_state.current_year, st.session_state.current_week)
 week_dates = get_week_dates(st.session_state.current_year, st.session_state.current_week)
 days, day_names = ['mon', 'tue', 'wed', 'thu', 'fri'], ['월', '화', '수', '목', '금']
@@ -243,7 +262,6 @@ if current_week_id not in st.session_state.all_data['plans']:
 
 for team_name in TEAM_ORDER:
     team_members_in_group = [m for m in st.session_state.all_data.get('team_members', []) if isinstance(m, dict) and m.get('team') == team_name]
-    # 직급 순으로 정렬
     team_members_in_group.sort(key=lambda m: RANK_ORDER.index(m.get('rank', '기타')) if m.get('rank') in RANK_ORDER else len(RANK_ORDER))
     if not team_members_in_group: continue
 
@@ -255,20 +273,49 @@ for team_name in TEAM_ORDER:
         member_info = f"[{member_data.get('team', '')}] {member_data.get('rank', '')} {member_name}"
         st.subheader(member_info)
 
+        # --- 데이터 연동 로직 수정 ---
+        # 1. 현재 주차의 멤버 데이터가 없으면 기본 구조 생성
         if member_name not in st.session_state.all_data['plans'][current_week_id]:
-            st.session_state.all_data['plans'][current_week_id][member_name] = {"grid": {}}
+            st.session_state.all_data['plans'][current_week_id][member_name] = {
+                "grid": {f"{day}_{time}": "" for day in days for time in ['am', 'pm']},
+                "lastWeekGrid": None, # None으로 초기화하여 연동 여부 판단
+                "lastWeekReview": None,
+                "nextWeekPlan": "", "selfReview": "", "managerReview": ""
+            }
+        
+        member_plan = st.session_state.all_data['plans'][current_week_id][member_name]
+
+        # 2. 연동 데이터가 비어있을 경우(None)에만 이전 주 데이터로 채우기
+        if member_plan.get('lastWeekGrid') is None or member_plan.get('lastWeekReview') is None:
             prev_year, prev_week = (st.session_state.current_year, st.session_state.current_week - 1)
             if prev_week < 1: prev_year -= 1; prev_week = datetime(prev_year, 12, 28).isocalendar()[1]
             prev_week_id = get_week_id(prev_year, prev_week)
-            if prev_week_id in st.session_state.all_data['plans'] and member_name in st.session_state.all_data['plans'][prev_week_id]:
-                prev_data = st.session_state.all_data['plans'][prev_week_id][member_name]
-                if isinstance(prev_data, dict):
-                    work_summary = [f"{day_names[i]} - " + (f"오전: {prev_data.get('grid', {}).get(f'{d}_am', '')}" if prev_data.get('grid', {}).get(f'{d}_am', '') else "") + (" / " if prev_data.get('grid', {}).get(f'{d}_am', '') and prev_data.get('grid', {}).get(f'{d}_pm', '') else "") + (f"오후: {prev_data.get('grid', {}).get(f'{d}_pm', '')}" if prev_data.get('grid', {}).get(f'{d}_pm', '') else "") for i, d in enumerate(days) if prev_data.get('grid', {}).get(f'{d}_am', '') or prev_data.get('grid', {}).get(f'{d}_pm', '')]
-                    st.session_state.all_data['plans'][current_week_id][member_name]['lastWeekWork'] = "\n".join(work_summary)
-                    st.session_state.all_data['plans'][current_week_id][member_name]['lastWeekReview'] = prev_data.get('nextWeekPlan', '')
+            
+            prev_plans = st.session_state.all_data['plans'].get(prev_week_id, {})
+            prev_member_plan = prev_plans.get(member_name, {})
 
-        member_plan = st.session_state.all_data['plans'][current_week_id].get(member_name, {})
-
+            if member_plan.get('lastWeekGrid') is None:
+                member_plan['lastWeekGrid'] = prev_member_plan.get('grid', {})
+            if member_plan.get('lastWeekReview') is None:
+                member_plan['lastWeekReview'] = prev_member_plan.get('nextWeekPlan', "")
+        
+        # --- UI 렌더링 ---
+        # 지난주 업무 내역 (그리드 형식)
+        st.markdown("<h6>지난주 업무 내역</h6>", unsafe_allow_html=True)
+        last_week_grid_cols = st.columns([0.1] + [0.18] * 5)
+        last_week_grid_cols[0].markdown("<div class='header-base header-automated header-day'><b>구분</b></div>", unsafe_allow_html=True)
+        for i, name in enumerate(day_names):
+            last_week_grid_cols[i+1].markdown(f"<div class='header-base header-automated header-day'><b>{name}</b><br>({get_week_dates(prev_year, prev_week)[i]})</div>", unsafe_allow_html=True)
+        
+        last_am_cols, last_pm_cols = st.columns([0.1] + [0.18] * 5), st.columns([0.1] + [0.18] * 5)
+        last_am_cols[0].markdown("<div class='header-base header-automated header-time'><b>오전</b></div>", unsafe_allow_html=True)
+        last_pm_cols[0].markdown("<div class='header-base header-automated header-time'><b>오후</b></div>", unsafe_allow_html=True)
+        for i, day in enumerate(days):
+            last_am_cols[i+1].text_area(f"last_grid_{member_name}_{day}_am_{current_week_id}", value=member_plan.get('lastWeekGrid', {}).get(f'{day}_am', ''), height=120, disabled=True)
+            last_pm_cols[i+1].text_area(f"last_grid_{member_name}_{day}_pm_{current_week_id}", value=member_plan.get('lastWeekGrid', {}).get(f'{day}_pm', ''), height=120, disabled=True)
+        
+        # 이번주 계획 (그리드 형식)
+        st.markdown("<h6>이번주 계획</h6>", unsafe_allow_html=True)
         grid_cols = st.columns([0.1] + [0.18] * 5)
         grid_cols[0].markdown("<div class='header-base header-default header-day'><b>구분</b></div>", unsafe_allow_html=True)
         for i, name in enumerate(day_names):
@@ -278,7 +325,6 @@ for team_name in TEAM_ORDER:
         am_cols[0].markdown("<div class='header-base header-default header-time'><b>오전</b></div>", unsafe_allow_html=True)
         pm_cols[0].markdown("<div class='header-base header-default header-time'><b>오후</b></div>", unsafe_allow_html=True)
         for i, day in enumerate(days):
-            if 'grid' not in member_plan: member_plan['grid'] = {}
             member_plan['grid'][f'{day}_am'] = am_cols[i+1].text_area(f"grid_{member_name}_{day}_am_{current_week_id}", value=member_plan.get('grid', {}).get(f'{day}_am', ''), height=120)
             member_plan['grid'][f'{day}_pm'] = pm_cols[i+1].text_area(f"grid_{member_name}_{day}_pm_{current_week_id}", value=member_plan.get('grid', {}).get(f'{day}_pm', ''), height=120)
 
@@ -289,8 +335,7 @@ for team_name in TEAM_ORDER:
             member_plan[key] = cols[1].text_area(f"{key}_{member_name}_{current_week_id}", value=member_plan.get(key, ""), placeholder=placeholder, height=height)
 
         st.markdown("<div style='margin-top: -8px;'></div>", unsafe_allow_html=True)
-        render_summary_row("지난주 업무 내역", "lastWeekWork", "지난주 계획이 자동으로 채워집니다. 수정 가능합니다.", True)
-        render_summary_row("지난주 리뷰", "lastWeekReview", "지난주의 '차주 계획'이 자동으로 채워집니다. 수정 가능합니다.", True)
+        render_summary_row("지난주 리뷰", "lastWeekReview", "지난주의 '차주 계획'이 자동으로 채워집니다.", True)
         render_summary_row("차주 계획", "nextWeekPlan", "다음 주 '지난주 리뷰' 칸에 표시될 내용을 입력하세요.", False)
         render_summary_row("본인 리뷰", "selfReview", "", False)
         render_summary_row("부서장 리뷰", "managerReview", "", False)
