@@ -73,9 +73,9 @@ def create_default_data():
     return {
         "team_members": [
             {"name": "이종철", "rank": "책임", "team": "Team종철"},
-            {"name": "김대리", "rank": "대리", "team": "AE/AM"},
-            {"name": "박사원", "rank": "사원", "team": "AE/AM"},
-            {"name": "이선임", "rank": "선임", "team": "BSA"}
+            {"name": "배하란", "rank": "선임", "team": "AE/AM"},
+            {"name": "이승하", "rank": "사원", "team": "BSA"},
+            {"name": "오동민", "rank": "대리", "team": "GD"}
         ],
         "plans": {}
     }
@@ -188,19 +188,19 @@ with top_cols[0]:
     st.subheader("주차 선택")
     nav_cols = st.columns([1, 2, 1])
     
-    if nav_cols[0].button("◀️ 이전 주", use_container_width=True):
+    if nav_cols[0].button("◀ 지난주", use_container_width=True):
         st.session_state.selected_date -= timedelta(weeks=1)
 
     # st.date_input을 중앙 컬럼에 배치
     st.session_state.selected_date = nav_cols[1].date_input("날짜 선택", value=st.session_state.selected_date)
     
-    if nav_cols[2].button("다음 주 ▶️", use_container_width=True):
+    if nav_cols[2].button("다음주 ▶", use_container_width=True):
         st.session_state.selected_date += timedelta(weeks=1)
     
     # 선택된 날짜로부터 년도와 주차 정보 추출
     selected_year = st.session_state.selected_date.isocalendar().year
     selected_week = st.session_state.selected_date.isocalendar().week
-    st.info(f"**현재 선택된 주차:** {selected_year}년 {selected_week}주차")
+    st.info(f"**오늘 몇주차:** {selected_year}년 {selected_week}주차")
 
 
 with top_cols[1]:
