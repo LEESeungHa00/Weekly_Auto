@@ -10,8 +10,8 @@ st.set_page_config(layout="wide", page_title="자동 주간 계획서")
 # --- CSS 스타일링 ---
 st.markdown("""
 <style>
-    /* Streamlit 기본 UI 요소 숨기기 */
-    #MainMenu, footer, header {visibility: hidden;}
+    /* Streamlit 기본 UI 요소 숨기기 (header 제외) */
+    #MainMenu, footer {visibility: hidden;}
 
     /* 중앙 정렬 및 색상 테마 적용 */
     .header-base {
@@ -211,7 +211,7 @@ with st.sidebar:
 # --- 메인 페이지 UI ---
 title_cols = st.columns([3, 1])
 with title_cols[0]:
-    st.title("Weekly Sync-Up")
+    st.title("Weekly Sync-Up🪄")
 with title_cols[1]:
     if st.button("📄 현재 뷰 PDF로 저장", type="primary", use_container_width=True):
         if not os.path.exists(FONT_FILE):
@@ -285,7 +285,7 @@ if 'confirming_delete' in st.session_state and st.session_state.confirming_delet
         if current_week_id in st.session_state.all_data['plans'] and member_to_delete in st.session_state.all_data['plans'][current_week_id]:
             del st.session_state.all_data['plans'][current_week_id][member_to_delete]
             save_data(st.session_state.all_data)
-            st.success(f"'{member_to_delete}' 님의 이번 주 보고서를 삭제했습니다.")
+            st.success(f"'{member_to_delete}' 님의 보고서를 삭제했습니다.")
         del st.session_state.confirming_delete
         st.rerun()
 
@@ -375,7 +375,7 @@ else:
 
             st.markdown("<div style='margin-top: -8px;'></div>", unsafe_allow_html=True)
             render_summary_row("지난주 리뷰 (수정 가능)", "lastWeekReview", "지난주 차주 계획을 작성하지 않아 연동되지 않았습니다.", True)
-            render_summary_row("차주 계획", "nextWeekPlan", "다음 주 계획의 세부 사항을 작성해주세요. (주요 목표, 예상 산출물, 협업 계획 등)", False)
+            render_summary_row("차주 계획", "nextWeekPlan", "다음 주 계획을 구체적으로 작성해주세요. (주요 목표, 예상 산출물, 협업 계획 등)", False)
             render_summary_row("본인 리뷰", "selfReview", "스스로에 대한 리뷰 및 이슈, 건의사항을 편하게 작성해주세요.", False)
             render_summary_row("부서장 리뷰", "managerReview", "이번 한 주도 고생 많으셨습니다.🚀", False)
             st.markdown("---")
