@@ -191,18 +191,43 @@ def get_week_dates(date_obj):
 with st.sidebar:
     st.title("과거 기록 조회")
     
-    all_years = sorted(list(set(int(week_id.split('-W')[0]) for week_id in st.session_state.all_data['plans'].keys())), reverse=True)
-    if not all_years:
-        current_year_for_sidebar = datetime.now().year
-        all_years = list(range(current_year_for_sidebar, current_year_for_sidebar - 5, -1))
+    # 연도 선택 로직 변경
+    plan_years = [int(week_id.split('-W')[0]) for week_id in st.session_state.all_data['plans'].keys()]
+    current_year = datetime.now().year
+    
+    if plan_years:
+        min_year = min(plan_years)
+        max_year = max(plan_years)
+        all_years = list(range(min_year - 3, max_year + 4))
+    else:
+        # 데이터가 없을 경우 현재 연도 기준으로 7년치 보여주기
+        all_years = list(range(current_year - 3, current_year + 4))
+    
+    # 현재 연도가 목록에 있도록 보장
+    if current_year not in all_years:
+        all_years.append(current_year)
+        all_years.sort(reverse=True)
 
-    sidebar_year = st.selectbox("연도 선택", all_years)
+    # 기본 선택 인덱스 설정
+    try:
+        default_year_index = all_years.index(st.session_state.selected_date.isocalendar().year)
+    except ValueError:
+        default_year_index = all_years.index(current_year) if current_year in all_years else 0
 
-    weeks_in_year = sorted([int(week_id.split('-W')[1]) for week_id in st.session_state.all_data['plans'].keys() if week_id.startswith(f"{sidebar_year}-W")], reverse=True)
-    if not weeks_in_year:
-        weeks_in_year = [1]
+    sidebar_year = st.selectbox("연도 선택", all_years, index=default_year_index)
 
-    sidebar_week = st.selectbox("주차 선택", weeks_in_year)
+    # 주차 선택 로직 변경
+    try:
+        weeks_in_year_count = datetime(sidebar_year, 12, 28).isocalendar()[1]
+        weeks_in_year = list(range(1, weeks_in_year_count + 1))
+    except ValueError: # 연도 범위 벗어날 경우 대비
+        weeks_in_year = list(range(1, 53))
+
+    # 기본 선택 인덱스 설정
+    current_week_of_selected_year = st.session_state.selected_date.isocalendar().week if st.session_state.selected_date.isocalendar().year == sidebar_year else 1
+    default_week_index = current_week_of_selected_year - 1 if (current_week_of_selected_year - 1) < len(weeks_in_year) else 0
+
+    sidebar_week = st.selectbox("주차 선택", weeks_in_year, index=default_week_index)
 
     if st.button("조회하기", use_container_width=True):
         st.session_state.selected_date = datetime.fromisocalendar(sidebar_year, sidebar_week, 1)
@@ -250,7 +275,7 @@ with top_cols[0]:
         st.rerun()
 
 with top_cols[1]:
-    with st.expander("🪄 주간보고 생성하기", expanded=True):
+    with st.expander("이번 주 보고서 추가", expanded=True):
         add_cols = st.columns([2, 2, 2, 1])
         new_name = add_cols[0].text_input("이름")
         new_rank = add_cols[1].selectbox("직급", RANK_ORDER)
