@@ -377,4 +377,20 @@ else:
             prev_date = st.session_state.selected_date - timedelta(weeks=1)
             last_week_dates = get_week_dates(prev_date)
             if 'lastWeekGrid' not in member_plan: member_plan['lastWeekGrid'] = {}
-            render_grid("지난주 업무 내역 (수정 가능)", member_plan['lastWeekGrid'], "last_grid", "header-automate
+            render_grid("지난주 업무 내역 (수정 가능)", member_plan['lastWeekGrid'], "last_grid", "header-automated", last_week_dates)
+
+            def render_summary_row(label, key, placeholder, is_auto, height=140):
+                header_class = "header-automated" if is_auto else "header-default"
+                cols = st.columns([0.2, 0.8])
+                cols[0].markdown(f"<div class='header-base {header_class} header-summary'><b>{label}</b></div>", unsafe_allow_html=True)
+                member_plan[key] = cols[1].text_area(f"{key}_{member_name}_{current_week_id}", value=member_plan.get(key, ""), placeholder=placeholder, height=height)
+
+            st.markdown("<div style='margin-top: -8px;'></div>", unsafe_allow_html=True)
+            render_summary_row("지난주 리뷰 (수정 가능)", "lastWeekReview", "지난주 차주 계획을 작성하지 않아 연동되지 않았습니다.", True)
+            render_summary_row("차주 계획", "nextWeekPlan", "다음 주 계획을 구체적으로 작성해주세요. (주요 목표, 예상 산출물, 협업 계획 등)", False)
+            render_summary_row("본인 리뷰", "selfReview", "스스로에 대한 리뷰 및 이슈, 건의사항을 편하게 작성해주세요.", False)
+            render_summary_row("부서장 리뷰", "managerReview", "이번 한 주도 고생 많으셨습니다.🚀", False)
+            st.markdown("---")
+        st.markdown("<br>", unsafe_allow_html=True)
+
+    save_data(st.session_state.all_data)
