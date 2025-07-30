@@ -187,8 +187,9 @@ def generate_pdf(plans_data, members_data, year, week, week_dates, prev_week_dat
 # --- 세션 상태 초기화 ---
 if 'all_data' not in st.session_state:
     st.session_state.all_data = load_data()
+# BUG FIX 1: 기본 랜딩 화면을 다음 주로 설정
 if 'selected_date' not in st.session_state:
-    st.session_state.selected_date = datetime.now()
+    st.session_state.selected_date = datetime.now() + timedelta(weeks=1)
 
 # --- 유틸리티 함수 ---
 def get_week_id(year, week): return f"{year}-W{str(week).zfill(2)}"
@@ -284,21 +285,25 @@ with top_cols[1]:
         new_rank = add_cols[1].selectbox("직급", ["직급 선택"] + RANK_ORDER)
         new_team = add_cols[2].selectbox("팀", ["팀 선택"] + TEAM_ORDER)
         if add_cols[3].button("생성"):
-            if new_rank == "직급 선택" or new_team == "팀 선택":
+            current_week_id = get_week_id(selected_year, selected_week)
+            
+            # BUG FIX 2: 중복 생성 방지 로직 강화
+            if not new_name:
+                st.warning("이름을 입력해주세요.")
+            elif new_rank == "직급 선택" or new_team == "팀 선택":
                 st.warning("직급과 팀을 모두 선택해주세요.")
-            elif new_name:
+            elif current_week_id in st.session_state.all_data['plans'] and new_name in st.session_state.all_data['plans'][current_week_id]:
+                st.warning(f"'{new_name}' 님의 이번 주 보고서가 이미 존재합니다.")
+            else:
                 if 'team_members' not in st.session_state.all_data: st.session_state.all_data['team_members'] = []
                 team_members_list = st.session_state.all_data['team_members']
                 if not any(isinstance(m, dict) and m.get('name') == new_name for m in team_members_list):
                     team_members_list.append({"name": new_name, "rank": new_rank, "team": new_team})
                 
-                current_week_id = get_week_id(selected_year, selected_week)
                 if current_week_id not in st.session_state.all_data['plans']: st.session_state.all_data['plans'][current_week_id] = {}
                 st.session_state.all_data['plans'][current_week_id][new_name] = {}
                 save_data(st.session_state.all_data)
                 st.rerun()
-            else:
-                st.warning("이름을 입력해주세요.")
 
 st.markdown("---")
 
