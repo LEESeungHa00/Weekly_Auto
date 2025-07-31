@@ -182,13 +182,10 @@ def generate_pdf(plans_data, members_data, year, week, week_dates, prev_week_dat
 
 
 # --- 세션 상태 초기화 ---
-# BUG FIX: 데이터 안정성을 위해 데이터를 먼저 로드합니다.
 if 'all_data' not in st.session_state:
     st.session_state.all_data = load_data()
-
-# 데이터 로드 후, 랜딩 페이지 날짜를 설정합니다.
 if 'selected_date' not in st.session_state:
-    st.session_state.selected_date = datetime.now() + timedelta(weeks=1)
+    st.session_state.selected_date = datetime.now()
 
 # --- 유틸리티 함수 ---
 def get_week_id(year, week): return f"{year}-W{str(week).zfill(2)}"
@@ -263,11 +260,12 @@ with title_cols[1]:
 st.markdown("---")
 
 top_cols = st.columns([3, 2])
+selected_year = st.session_state.selected_date.isocalendar().year
+selected_week = st.session_state.selected_date.isocalendar().week
+current_week_id = get_week_id(selected_year, selected_week)
+
 with top_cols[0]:
     st.subheader("주차 선택")
-    selected_year = st.session_state.selected_date.isocalendar().year
-    selected_week = st.session_state.selected_date.isocalendar().week
-
     nav_cols = st.columns([1, 2, 1])
     if nav_cols[0].button("◀ 지난주", use_container_width=True):
         st.session_state.selected_date -= timedelta(weeks=1)
@@ -279,62 +277,82 @@ with top_cols[0]:
 
 with top_cols[1]:
     with st.expander("이번 주 보고서 추가", expanded=True):
-        add_cols = st.columns([2, 2, 2, 1])
-        new_name = add_cols[0].text_input("이름")
-        new_rank = add_cols[1].selectbox("직급", ["직급 선택"] + RANK_ORDER)
-        new_team = add_cols[2].selectbox("팀", ["팀 선택"] + TEAM_ORDER)
-        if add_cols[3].button("생성"):
-            current_week_id = get_week_id(selected_year, selected_week)
-            
-            if not new_name:
-                st.warning("이름을 입력해주세요.")
-            elif new_rank == "직급 선택" or new_team == "팀 선택":
-                st.warning("직급과 팀을 모두 선택해주세요.")
-            elif current_week_id in st.session_state.all_data['plans'] and new_name in st.session_state.all_data['plans'][current_week_id]:
-                st.warning(f"'{new_name}' 님의 이번 주 보고서가 이미 존재합니다.")
-            else:
-                if 'team_members' not in st.session_state.all_data: st.session_state.all_data['team_members'] = []
-                team_members_list = st.session_state.all_data['team_members']
-                if not any(isinstance(m, dict) and m.get('name') == new_name for m in team_members_list):
-                    team_members_list.append({"name": new_name, "rank": new_rank, "team": new_team})
-                
+        # 이번 주에 보고서가 아직 없는 팀원만 목록에 표시
+        team_members_list = st.session_state.all_data.get('team_members', [])
+        reports_this_week = st.session_state.all_data['plans'].get(current_week_id, {}).keys()
+        members_to_add = [m for m in team_members_list if m.get('name') not in reports_this_week]
+        
+        if members_to_add:
+            member_to_add_name = st.selectbox("보고서를 추가할 팀원 선택", [m['name'] for m in members_to_add])
+            if st.button("선택한 팀원 보고서 생성", use_container_width=True):
                 if current_week_id not in st.session_state.all_data['plans']: st.session_state.all_data['plans'][current_week_id] = {}
-                st.session_state.all_data['plans'][current_week_id][new_name] = {}
+                st.session_state.all_data['plans'][current_week_id][member_to_add_name] = {}
                 save_data(st.session_state.all_data)
+                st.rerun()
+        else:
+            st.info("모든 팀원이 이번 주 보고서를 추가했습니다.")
+
+    with st.expander("팀원 목록 관리 (추가/수정/영구삭제)"):
+        st.write("---")
+        st.write("**신규 팀원 추가**")
+        add_cols = st.columns([2, 2, 2, 1])
+        new_name = add_cols[0].text_input("이름", key="new_member_name")
+        new_rank = add_cols[1].selectbox("직급", RANK_ORDER, key="new_member_rank")
+        new_team = add_cols[2].selectbox("팀", TEAM_ORDER, key="new_member_team")
+        if add_cols[3].button("추가"):
+            if new_name and not any(m.get('name') == new_name for m in team_members_list):
+                st.session_state.all_data['team_members'].append({"name": new_name, "rank": new_rank, "team": new_team})
+                save_data(st.session_state.all_data)
+                st.success(f"'{new_name}' 님을 팀원 목록에 추가했습니다.")
+                st.rerun()
+            else:
+                st.warning("이름을 입력하지 않았거나 이미 존재하는 팀원입니다.")
+        
+        st.write("---")
+        st.write("**기존 팀원 영구 삭제**")
+        if team_members_list:
+            member_to_delete_permanently = st.selectbox("영구 삭제할 팀원 선택", [m['name'] for m in team_members_list])
+            if st.button("선택한 팀원 영구 삭제", type="primary"):
+                st.session_state.confirming_permanent_delete = member_to_delete_permanently
                 st.rerun()
 
 st.markdown("---")
 
-if 'confirming_delete' in st.session_state and st.session_state.confirming_delete:
+# --- 삭제 확인 로직 ---
+if 'confirming_delete' in st.session_state:
     member_to_delete = st.session_state.confirming_delete
     st.warning(f"**⚠️ 확인: '{member_to_delete}' 님의 이번 주({selected_year}년 {selected_week}주차) 보고서를 삭제하시겠습니까?**")
-    
     confirm_cols = st.columns(8)
     if confirm_cols[0].button("예, 삭제합니다.", type="primary"):
-        current_week_id = get_week_id(selected_year, selected_week)
         if current_week_id in st.session_state.all_data['plans'] and member_to_delete in st.session_state.all_data['plans'][current_week_id]:
             del st.session_state.all_data['plans'][current_week_id][member_to_delete]
             save_data(st.session_state.all_data)
-            st.success(f"'{member_to_delete}' 님의 보고서를 삭제했습니다.")
         del st.session_state.confirming_delete
         st.rerun()
-
     if confirm_cols[1].button("아니오"):
         del st.session_state.confirming_delete
         st.rerun()
 
+if 'confirming_permanent_delete' in st.session_state:
+    member_to_delete = st.session_state.confirming_permanent_delete
+    st.error(f"**🚨 최종 확인: '{member_to_delete}' 님을 팀원 목록에서 영구적으로 삭제합니다. 모든 과거 기록도 더 이상 보이지 않게 됩니다. 계속하시겠습니까?**")
+    confirm_cols = st.columns(8)
+    if confirm_cols[0].button("예, 영구 삭제합니다.", type="primary"):
+        st.session_state.all_data['team_members'] = [m for m in st.session_state.all_data.get('team_members', []) if m.get('name') != member_to_delete]
+        save_data(st.session_state.all_data)
+        del st.session_state.confirming_permanent_delete
+        st.rerun()
+    if confirm_cols[1].button("취소"):
+        del st.session_state.confirming_permanent_delete
+        st.rerun()
+
+# --- 메인 계획표 렌더링 ---
 else:
-    current_week_id = get_week_id(selected_year, selected_week)
-    week_dates = get_week_dates(st.session_state.selected_date)
-    days, day_names = ['mon', 'tue', 'wed', 'thu', 'fri'], ['월', '화', '수', '목', '금']
-
     members_with_reports_this_week = st.session_state.all_data['plans'].get(current_week_id, {}).keys()
-
     for team_name in TEAM_ORDER:
         all_team_members = st.session_state.all_data.get('team_members', [])
         team_members_in_group = [m for m in all_team_members if isinstance(m, dict) and m.get('team') == team_name and m.get('name') in members_with_reports_this_week]
         team_members_in_group.sort(key=lambda m: RANK_ORDER.index(m.get('rank', '기타')) if m.get('rank') in RANK_ORDER else len(RANK_ORDER))
-        
         if not team_members_in_group: continue
 
         st.title(f"<{team_name}>")
@@ -362,7 +380,6 @@ else:
                 member_plan['lastWeekGrid'] = prev_member_plan.get('grid', {})
                 member_plan['lastWeekReview'] = prev_member_plan.get('nextWeekPlan', "")
             
-            # --- 반응형 그리드 렌더링 ---
             def render_grid(title, grid_data, key_prefix, header_class, dates, is_editable=True):
                 st.markdown(f"<h6>{title}</h6>", unsafe_allow_html=True)
                 day_cols = st.columns(5)
