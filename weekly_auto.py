@@ -241,7 +241,7 @@ with st.sidebar:
         
         st.write("**신규 팀원 추가**")
         with st.form("add_member_form", clear_on_submit=True):
-            new_name = st.text_input("이름")
+            new_name = st.text_input("이름",placeholder="이름 입")
             new_rank = st.selectbox("직급", RANK_ORDER, placeholder="직급 선택")
             new_team = st.selectbox("팀", TEAM_ORDER, placeholder="팀 선택")
             submitted_add = st.form_submit_button("추가")
@@ -267,8 +267,8 @@ with st.sidebar:
                 
                 with st.form(f"edit_{member_to_edit_name}"):
                     edited_name = st.text_input("이름 수정", value=member_data['name'])
-                    edited_rank = st.selectbox("직급 수정", RANK_ORDER, index=RANK_ORDER.index(member_data['rank']))
-                    edited_team = st.selectbox("팀 수정", TEAM_ORDER, index=TEAM_ORDER.index(member_data['team']))
+                    edited_rank = st.selectbox("직급 수정", RANK_ORDER, placeholder="직급 선택",index=RANK_ORDER.index(member_data['rank']))
+                    edited_team = st.selectbox("팀 수정", TEAM_ORDER,placeholder="팀 선택", index=TEAM_ORDER.index(member_data['team']))
                     submitted_edit = st.form_submit_button("수정 완료")
                     if submitted_edit:
                         # 이름이 변경되었는지 확인
