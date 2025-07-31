@@ -241,9 +241,9 @@ with st.sidebar:
         
         st.write("**신규 팀원 추가**")
         with st.form("add_member_form", clear_on_submit=True):
-            new_name = st.text_input("이름",placeholder="이름 입")
-            new_rank = st.selectbox("직급", RANK_ORDER, placeholder="직급 선택")
-            new_team = st.selectbox("팀", TEAM_ORDER, placeholder="팀 선택")
+            new_name = st.text_input("이름",placeholder="이름 입력")
+            new_rank = st.selectbox("직급",placeholder="직급 선택" ,RANK_ORDER)
+            new_team = st.selectbox("팀", placeholder="팀 선택",TEAM_ORDER)
             submitted_add = st.form_submit_button("추가")
             if submitted_add:
                 if not new_name or not new_rank or not new_team:
