@@ -115,7 +115,6 @@ def generate_pdf(plans_data, members_data, year, week, week_dates, prev_week_dat
         team_members_in_group.sort(key=lambda m: RANK_ORDER.index(m.get('rank', '기타')) if m.get('rank') in RANK_ORDER else len(RANK_ORDER))
         if not team_members_in_group: continue
 
-        # PDF에 팀 이름 섹션 추가 (해당 팀에 보고서가 있을 경우에만)
         if not any(m.get('name') in plans_data for m in team_members_in_group):
             continue
 
@@ -135,7 +134,6 @@ def generate_pdf(plans_data, members_data, year, week, week_dates, prev_week_dat
             pdf.cell(0, 10, member_info, ln=True, align='L')
             pdf.ln(2)
 
-            # 이번주 계획 그리드
             pdf.set_font('NanumGothic', 'B', 11)
             pdf.set_fill_color(70, 130, 180)
             pdf.cell(0, 8, '이번주 계획', ln=True, fill=True, border=1, align='C')
@@ -151,7 +149,6 @@ def generate_pdf(plans_data, members_data, year, week, week_dates, prev_week_dat
                     if pm: pdf.multi_cell(0, 5, f'  오후: {pm}')
             pdf.ln(5)
 
-            # 지난주 업무 내역 그리드
             pdf.set_font('NanumGothic', 'B', 11)
             pdf.set_fill_color(153, 50, 204)
             pdf.cell(0, 8, '지난주 업무 내역 (수정본)', ln=True, fill=True, border=1, align='C')
@@ -185,9 +182,11 @@ def generate_pdf(plans_data, members_data, year, week, week_dates, prev_week_dat
 
 
 # --- 세션 상태 초기화 ---
+# BUG FIX: 데이터 안정성을 위해 데이터를 먼저 로드합니다.
 if 'all_data' not in st.session_state:
     st.session_state.all_data = load_data()
-# BUG FIX 1: 기본 랜딩 화면을 다음 주로 설정
+
+# 데이터 로드 후, 랜딩 페이지 날짜를 설정합니다.
 if 'selected_date' not in st.session_state:
     st.session_state.selected_date = datetime.now() + timedelta(weeks=1)
 
@@ -287,7 +286,6 @@ with top_cols[1]:
         if add_cols[3].button("생성"):
             current_week_id = get_week_id(selected_year, selected_week)
             
-            # BUG FIX 2: 중복 생성 방지 로직 강화
             if not new_name:
                 st.warning("이름을 입력해주세요.")
             elif new_rank == "직급 선택" or new_team == "팀 선택":
