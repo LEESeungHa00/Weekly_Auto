@@ -236,31 +236,66 @@ with st.sidebar:
             st.rerun()
 
     st.markdown("---")
-    with st.expander("팀원 목록 관리", expanded=False):
+    with st.expander("팀원 목록 관리", expanded=True):
+        team_members_list = st.session_state.all_data.get('team_members', [])
+        
         st.write("**신규 팀원 추가**")
-        add_cols = st.columns([2, 2, 2, 1])
-        new_name = add_cols[0].text_input("이름", key="new_member_name")
-        new_rank = add_cols[1].selectbox("직급", RANK_ORDER, key="new_member_rank")
-        new_team = add_cols[2].selectbox("팀", TEAM_ORDER, key="new_member_team")
-        if add_cols[3].button("추가"):
-            if 'team_members' not in st.session_state.all_data: st.session_state.all_data['team_members'] = []
-            team_members_list = st.session_state.all_data['team_members']
-            if new_name and not any(isinstance(m, dict) and m.get('name') == new_name for m in team_members_list):
-                team_members_list.append({"name": new_name, "rank": new_rank, "team": new_team})
-                save_data(st.session_state.all_data)
-                st.success(f"'{new_name}' 님을 팀원 목록에 추가했습니다.")
-                st.rerun()
-            else:
-                st.warning("이름을 입력하지 않았거나 이미 존재하는 팀원입니다.")
+        with st.form("add_member_form", clear_on_submit=True):
+            new_name = st.text_input("이름")
+            new_rank = st.selectbox("직급", RANK_ORDER, placeholder="직급 선택")
+            new_team = st.selectbox("팀", TEAM_ORDER, placeholder="팀 선택")
+            submitted_add = st.form_submit_button("추가")
+            if submitted_add:
+                if not new_name or not new_rank or not new_team:
+                    st.warning("이름, 직급, 팀을 모두 선택해주세요.")
+                elif any(m.get('name') == new_name for m in team_members_list):
+                    st.warning("이미 존재하는 팀원입니다.")
+                else:
+                    team_members_list.append({"name": new_name, "rank": new_rank, "team": new_team})
+                    save_data(st.session_state.all_data)
+                    st.success(f"'{new_name}' 님을 팀원 목록에 추가했습니다.")
+                    st.rerun()
         
         st.write("---")
-        st.write("**기존 팀원 영구 삭제**")
-        team_members_list = st.session_state.all_data.get('team_members', [])
+        st.write("**팀원 정보 수정**")
         if team_members_list:
-            member_to_delete_permanently = st.selectbox("영구 삭제할 팀원 선택", [m['name'] for m in team_members_list])
+            member_names = [m['name'] for m in team_members_list]
+            member_to_edit_name = st.selectbox("수정할 팀원 선택", member_names, placeholder="팀원 선택", index=None)
+            if member_to_edit_name:
+                member_to_edit_index = member_names.index(member_to_edit_name)
+                member_data = team_members_list[member_to_edit_index]
+                
+                with st.form(f"edit_{member_to_edit_name}"):
+                    edited_name = st.text_input("이름 수정", value=member_data['name'])
+                    edited_rank = st.selectbox("직급 수정", RANK_ORDER, index=RANK_ORDER.index(member_data['rank']))
+                    edited_team = st.selectbox("팀 수정", TEAM_ORDER, index=TEAM_ORDER.index(member_data['team']))
+                    submitted_edit = st.form_submit_button("수정 완료")
+                    if submitted_edit:
+                        # 이름이 변경되었는지 확인
+                        if edited_name != member_to_edit_name:
+                            # 다른 팀원과 이름이 중복되는지 확인
+                            if any(m['name'] == edited_name for m in team_members_list if m['name'] != member_to_edit_name):
+                                st.error("이미 존재하는 이름입니다. 다른 이름을 사용해주세요.")
+                            else: # 이름이 변경되면 모든 과거 데이터의 키를 변경
+                                for week_id, week_data in st.session_state.all_data['plans'].items():
+                                    if member_to_edit_name in week_data:
+                                        week_data[edited_name] = week_data.pop(member_to_edit_name)
+                        
+                        team_members_list[member_to_edit_index] = {"name": edited_name, "rank": edited_rank, "team": edited_team}
+                        save_data(st.session_state.all_data)
+                        st.success(f"'{edited_name}' 님의 정보가 수정되었습니다.")
+                        st.rerun()
+
+        st.write("---")
+        st.write("**기존 팀원 영구 삭제**")
+        if team_members_list:
+            member_to_delete_permanently = st.selectbox("영구 삭제할 팀원 선택", member_names, placeholder="팀원 선택", index=None, key="delete_permanent_select")
             if st.button("선택한 팀원 영구 삭제", type="primary"):
-                st.session_state.confirming_permanent_delete = member_to_delete_permanently
-                st.rerun()
+                if member_to_delete_permanently:
+                    st.session_state.confirming_permanent_delete = member_to_delete_permanently
+                    st.rerun()
+                else:
+                    st.warning("삭제할 팀원을 선택해주세요.")
 
 # --- 메인 페이지 UI ---
 title_cols = st.columns([3, 1])
@@ -302,11 +337,14 @@ with top_cols[1]:
         members_to_add = [m for m in team_members_list if m.get('name') not in reports_this_week]
         
         if members_to_add:
-            member_to_add_name = st.selectbox("보고서를 추가할 팀원 선택", [m['name'] for m in members_to_add])
+            member_to_add_name = st.selectbox("보고서를 추가할 팀원 선택", [m['name'] for m in members_to_add], placeholder="팀원 선택", index=None)
             if st.button("선택한 팀원 보고서 생성", use_container_width=True):
-                if current_week_id not in st.session_state.all_data['plans']: st.session_state.all_data['plans'][current_week_id] = {}
-                st.session_state.all_data['plans'][current_week_id][member_to_add_name] = {}
-                save_data(st.session_state.all_data); st.rerun()
+                if member_to_add_name:
+                    if current_week_id not in st.session_state.all_data['plans']: st.session_state.all_data['plans'][current_week_id] = {}
+                    st.session_state.all_data['plans'][current_week_id][member_to_add_name] = {}
+                    save_data(st.session_state.all_data); st.rerun()
+                else:
+                    st.warning("보고서를 추가할 팀원을 선택해주세요.")
         else:
             st.info("모든 팀원이 이번 주 보고서를 추가했습니다.")
 
