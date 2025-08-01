@@ -10,7 +10,7 @@ import pandas as pd
 import time # 저장 피드백을 위한 라이브러리 추가
 
 # --- 초기 설정 및 페이지 구성 ---
-st.set_page_config(layout="wide", page_title="자동 주간 계획서")
+st.set_page_config(layout="wide", page_title="Weekly")
 
 # --- CSS 스타일링 (변경 없음) ---
 st.markdown("""
@@ -36,7 +36,7 @@ def connect_to_gsheet():
             st.secrets["gcp_service_account"], scopes=scopes
         )
         client = gspread.authorize(creds)
-        spreadsheet = client.open("주간업무보고_DB)
+        spreadsheet = client.open(GOOGLE_SHEET_NAME)
         members_sheet = spreadsheet.worksheet("team_members")
         plans_sheet = spreadsheet.worksheet("plans")
         return members_sheet, plans_sheet
