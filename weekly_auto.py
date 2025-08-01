@@ -68,6 +68,7 @@ DATA_FILE = "plans_data.json"
 TEAM_ORDER = ["Team종철", "AE/AM", "BDR", "GD", "BSA"]
 RANK_ORDER = ["책임", "선임", "대리", "사원", "인턴", "기타"] # 직급 정렬 순서
 FONT_FILE = "NanumGothic.ttf"
+DELETE_PASSWORD = "3002"
 
 def load_data():
     """JSON 파일에서 모든 데이터를 불러옵니다."""
@@ -241,9 +242,9 @@ with st.sidebar:
         
         st.write("**신규 팀원 추가**")
         with st.form("add_member_form", clear_on_submit=True):
-            new_name = st.text_input("이름",placeholder="이름 입력")
-            new_rank = st.selectbox("직급",RANK_ORDER,placeholder="직급 선택",index=None)
-            new_team = st.selectbox("팀",TEAM_ORDER, placeholder="팀 선택",index=None)
+            new_name = st.text_input("이름")
+            new_rank = st.selectbox("직급", RANK_ORDER, placeholder="직급 선택")
+            new_team = st.selectbox("팀", TEAM_ORDER, placeholder="팀 선택")
             submitted_add = st.form_submit_button("추가")
             if submitted_add:
                 if not new_name or not new_rank or not new_team:
@@ -267,16 +268,14 @@ with st.sidebar:
                 
                 with st.form(f"edit_{member_to_edit_name}"):
                     edited_name = st.text_input("이름 수정", value=member_data['name'])
-                    edited_rank = st.selectbox("직급 수정", RANK_ORDER, placeholder="직급 선택",index=RANK_ORDER.index(member_data['rank']))
-                    edited_team = st.selectbox("팀 수정", TEAM_ORDER,placeholder="팀 선택", index=TEAM_ORDER.index(member_data['team']))
+                    edited_rank = st.selectbox("직급 수정", RANK_ORDER, index=RANK_ORDER.index(member_data['rank']))
+                    edited_team = st.selectbox("팀 수정", TEAM_ORDER, index=TEAM_ORDER.index(member_data['team']))
                     submitted_edit = st.form_submit_button("수정 완료")
                     if submitted_edit:
-                        # 이름이 변경되었는지 확인
                         if edited_name != member_to_edit_name:
-                            # 다른 팀원과 이름이 중복되는지 확인
                             if any(m['name'] == edited_name for m in team_members_list if m['name'] != member_to_edit_name):
                                 st.error("이미 존재하는 이름입니다. 다른 이름을 사용해주세요.")
-                            else: # 이름이 변경되면 모든 과거 데이터의 키를 변경
+                            else: 
                                 for week_id, week_data in st.session_state.all_data['plans'].items():
                                     if member_to_edit_name in week_data:
                                         week_data[edited_name] = week_data.pop(member_to_edit_name)
@@ -292,7 +291,7 @@ with st.sidebar:
             member_to_delete_permanently = st.selectbox("영구 삭제할 팀원 선택", member_names, placeholder="팀원 선택", index=None, key="delete_permanent_select")
             if st.button("선택한 팀원 영구 삭제", type="primary"):
                 if member_to_delete_permanently:
-                    st.session_state.confirming_permanent_delete = member_to_delete_permanently
+                    st.session_state.requesting_password_for_permanent_delete = member_to_delete_permanently
                     st.rerun()
                 else:
                     st.warning("삭제할 팀원을 선택해주세요.")
@@ -350,8 +349,36 @@ with top_cols[1]:
 
 st.markdown("---")
 
-# --- 삭제 확인 로직 ---
-if 'confirming_delete' in st.session_state:
+# --- 비밀번호 입력 및 삭제 확인 로직 ---
+if 'requesting_password_for_report_delete' in st.session_state:
+    member_to_delete = st.session_state.requesting_password_for_report_delete
+    st.warning(f"'{member_to_delete}' 님의 이번 주 보고서를 삭제하려면 비밀번호를 입력하세요.")
+    with st.form("password_form_report"):
+        password = st.text_input("비밀번호", type="password")
+        submitted = st.form_submit_button("확인")
+        if submitted:
+            if password == DELETE_PASSWORD:
+                del st.session_state.requesting_password_for_report_delete
+                st.session_state.confirming_delete = member_to_delete
+                st.rerun()
+            else:
+                st.error("비밀번호가 올바르지 않습니다.")
+
+elif 'requesting_password_for_permanent_delete' in st.session_state:
+    member_to_delete = st.session_state.requesting_password_for_permanent_delete
+    st.warning(f"'{member_to_delete}' 님을 영구적으로 삭제하려면 비밀번호를 입력하세요.")
+    with st.form("password_form_permanent"):
+        password = st.text_input("비밀번호", type="password")
+        submitted = st.form_submit_button("확인")
+        if submitted:
+            if password == DELETE_PASSWORD:
+                del st.session_state.requesting_password_for_permanent_delete
+                st.session_state.confirming_permanent_delete = member_to_delete
+                st.rerun()
+            else:
+                st.error("비밀번호가 올바르지 않습니다.")
+
+elif 'confirming_delete' in st.session_state:
     member_to_delete = st.session_state.confirming_delete
     st.warning(f"**⚠️ 확인: '{member_to_delete}' 님의 이번 주({selected_year}년 {selected_week}주차) 보고서를 삭제하시겠습니까?**")
     confirm_cols = st.columns(8)
@@ -363,7 +390,7 @@ if 'confirming_delete' in st.session_state:
     if confirm_cols[1].button("아니오"):
         del st.session_state.confirming_delete; st.rerun()
 
-if 'confirming_permanent_delete' in st.session_state:
+elif 'confirming_permanent_delete' in st.session_state:
     member_to_delete = st.session_state.confirming_permanent_delete
     st.error(f"**🚨 최종 확인: '{member_to_delete}' 님을 팀원 목록에서 영구적으로 삭제합니다. 모든 과거 기록도 더 이상 보이지 않게 됩니다. 계속하시겠습니까?**")
     confirm_cols = st.columns(8)
@@ -376,10 +403,7 @@ if 'confirming_permanent_delete' in st.session_state:
 
 # --- 메인 계획표 렌더링 ---
 else:
-    week_dates = get_week_dates(st.session_state.selected_date)
-    days, day_names = ['mon', 'tue', 'wed', 'thu', 'fri'], ['월', '화', '수', '목', '금']
     members_with_reports_this_week = st.session_state.all_data['plans'].get(current_week_id, {}).keys()
-
     for team_name in TEAM_ORDER:
         all_team_members = st.session_state.all_data.get('team_members', [])
         team_members_in_group = [m for m in all_team_members if isinstance(m, dict) and m.get('team') == team_name and m.get('name') in members_with_reports_this_week]
@@ -397,7 +421,8 @@ else:
                 st.subheader(member_info)
             with member_info_cols[1]:
                 if st.button("보고서 삭제", key=f"delete_btn_{member_name}", type="secondary"):
-                    st.session_state.confirming_delete = member_name; st.rerun()
+                    st.session_state.requesting_password_for_report_delete = member_name
+                    st.rerun()
 
             member_plan = st.session_state.all_data['plans'][current_week_id][member_name]
             if 'grid' not in member_plan: member_plan['grid'] = {}
@@ -412,6 +437,7 @@ else:
             def render_grid(title, grid_data, key_prefix, header_class, dates, is_editable=True):
                 st.markdown(f"<h6>{title}</h6>", unsafe_allow_html=True)
                 day_cols = st.columns(5)
+                days, day_names = ['mon', 'tue', 'wed', 'thu', 'fri'], ['월', '화', '수', '목', '금']
                 for i, day in enumerate(days):
                     with day_cols[i]:
                         st.markdown(f"<div class='header-base {header_class} header-day'><b>{day_names[i]}({dates[i]})</b></div>", unsafe_allow_html=True)
@@ -420,6 +446,7 @@ else:
                         st.markdown("<p class='mobile-label'>오후</p>", unsafe_allow_html=True)
                         grid_data[f'{day}_pm'] = st.text_area(f"{key_prefix}_{member_name}_{day}_pm_{current_week_id}", value=grid_data.get(f'{day}_pm', ''), height=120, disabled=not is_editable)
 
+            week_dates = get_week_dates(st.session_state.selected_date)
             render_grid("이번주 계획", member_plan['grid'], "grid", "header-default", week_dates)
             st.markdown("<div style='margin-top: 16px;'></div>", unsafe_allow_html=True)
             
