@@ -10,7 +10,7 @@ import pandas as pd
 import time
 
 # --- 1. 초기 설정 및 페이지 구성 ---
-st.set_page_config(layout="wide", page_title="자동 주간 계획서")
+st.set_page_config(layout="wide", page_title="GS KR WEEKLY")
 
 # --- 2. CSS 스타일링 ---
 st.markdown("""
@@ -193,7 +193,7 @@ def generate_pdf(plans_data, members_data, year, week, week_dates, prev_week_dat
 
 # --- 5. 세션 상태 초기화 및 유틸리티 함수 ---
 if 'all_data' not in st.session_state: st.session_state.all_data = load_data()
-if 'selected_date' not in st.session_state: st.session_state.selected_date = datetime.now()
+if 'selected_date' not in st.session_state: st.session_state.selected_date = datetime.now() + timedelta(weeks=1)
 
 def get_week_id(year, week): return f"{year}-W{str(week).zfill(2)}"
 def get_week_dates(date_obj):
@@ -302,6 +302,13 @@ with top_cols[1]:
                 else: st.warning("보고서를 추가할 팀원을 선택해주세요.")
         else: st.info("모든 팀원이 이번 주 보고서를 추가했습니다.")
 st.markdown("---")
+
+# --- 팝업 및 삭제 확인 로직 ---
+if 'initial_popup_shown' not in st.session_state:
+    today = datetime.now()
+    next_week_date = today + timedelta(weeks=1)
+    st.toast(f"{next_week_date.isocalendar().year}년 {next_week_date.isocalendar().week}주차 계획을 작성해주세요.", icon="🗓️")
+    st.session_state.initial_popup_shown = True
 
 # --- 8. 비밀번호 및 삭제 확인 로직 ---
 if 'requesting_password_for_report_delete' in st.session_state:
