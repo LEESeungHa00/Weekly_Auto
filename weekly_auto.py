@@ -5,7 +5,7 @@ import os
 from fpdf import FPDF
 
 # --- 초기 설정 및 페이지 구성 ---
-st.set_page_config(layout="wide", page_title="GS KR WEEKLY")
+st.set_page_config(layout="wide", page_title="자동 주간 계획서")
 
 # --- CSS 스타일링 ---
 st.markdown("""
@@ -73,7 +73,6 @@ DELETE_PASSWORD = "3002"
 def load_data():
     """JSON 파일에서 모든 데이터를 불러옵니다."""
     if os.path.exists(DATA_FILE):
-        # BUG FIX: utf-8-sig 인코딩을 사용하여 BOM(Byte Order Mark) 문제를 해결
         with open(DATA_FILE, 'r', encoding='utf-8-sig') as f:
             try:
                 content = f.read()
@@ -349,7 +348,12 @@ with top_cols[1]:
 
 st.markdown("---")
 
-# --- 비밀번호 입력 및 삭제 확인 로직 ---
+# --- 팝업 및 삭제 확인 로직 ---
+if 'initial_popup_shown' not in st.session_state:
+    today = datetime.now()
+    st.toast(f"오늘 날짜는 {today.isocalendar().year}년 {today.isocalendar().week}주차입니다.", icon="🗓️")
+    st.session_state.initial_popup_shown = True
+
 if 'requesting_password_for_report_delete' in st.session_state:
     member_to_delete = st.session_state.requesting_password_for_report_delete
     st.warning(f"'{member_to_delete}' 님의 이번 주 보고서를 삭제하려면 비밀번호를 입력하세요.")
