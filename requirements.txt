@@ -1,3 +1,6 @@
 streamlit
+pandas
+gspread
+gspread-dataframe
+google-auth-oauthlib
 fpdf2
-st-gsheets-connection
