@@ -3,6 +3,7 @@ import json
 from datetime import datetime, timedelta
 import os
 from fpdf import FPDF
+import time
 
 # --- 초기 설정 및 페이지 구성 ---
 st.set_page_config(layout="wide", page_title="자동 주간 계획서")
@@ -351,7 +352,7 @@ st.markdown("---")
 # --- 팝업 및 삭제 확인 로직 ---
 if 'initial_popup_shown' not in st.session_state:
     today = datetime.now()
-    st.toast(f"다음주는 {today.isocalendar().year}년 {today.isocalendar().week+1}주차입니다.", icon="🗓️")
+    st.toast(f"{today.isocalendar().year}년 {today.isocalendar().week+1}주차 계획을 작성해주세요.", icon="🗓️")
     st.session_state.initial_popup_shown = True
 
 if 'requesting_password_for_report_delete' in st.session_state:
@@ -458,7 +459,14 @@ else:
             render_summary_row("차주 계획", "nextWeekPlan", "다음 주 계획을 구체적으로 작성해주세요. (주요 목표, 예상 산출물, 협업 계획 등)", False)
             render_summary_row("본인 리뷰", "selfReview", "스스로에 대한 리뷰 및 이슈, 건의사항을 편하게 작성해주세요.", False)
             render_summary_row("부서장 리뷰", "managerReview", "이번 한 주도 고생 많으셨습니다.🚀", False)
+            
+            # --- 개별 저장 버튼 복원 ---
+            save_button_placeholder = st.empty()
+            if save_button_placeholder.button(f"💾 {member_name}님의 작성 내용 저장", key=f"save_btn_{member_name}", use_container_width=True, type="primary"):
+                save_data(st.session_state.all_data)
+                save_button_placeholder.success("✅ 저장 완료!")
+                time.sleep(1)
+                st.rerun()
+
             st.markdown("---")
         st.markdown("<br>", unsafe_allow_html=True)
-
-    save_data(st.session_state.all_data)
