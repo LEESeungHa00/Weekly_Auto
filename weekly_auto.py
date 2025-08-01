@@ -82,7 +82,10 @@ GOOGLE_SHEET_NAME = "주간업무보고_DB"
 def connect_to_gsheet():
     """Google Sheets에 연결하고 워크시트 객체를 반환합니다."""
     try:
-        scopes = ["https://www.googleapis.com/auth/spreadsheets"]
+        scopes = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive"
+]
         creds = Credentials.from_service_account_info(
             st.secrets["gcp_service_account"], scopes=scopes
         )
