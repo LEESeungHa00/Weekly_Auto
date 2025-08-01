@@ -351,7 +351,7 @@ st.markdown("---")
 # --- 팝업 및 삭제 확인 로직 ---
 if 'initial_popup_shown' not in st.session_state:
     today = datetime.now()
-    st.toast(f"오늘 날짜는 {today.isocalendar().year}년 {today.isocalendar().week}주차입니다.", icon="🗓️")
+    st.toast(f"다음주는 {today.isocalendar().year}년 {today.isocalendar().week+1}주차입니다.", icon="🗓️")
     st.session_state.initial_popup_shown = True
 
 if 'requesting_password_for_report_delete' in st.session_state:
