@@ -73,7 +73,8 @@ DELETE_PASSWORD = "3002"
 def load_data():
     """JSON 파일에서 모든 데이터를 불러옵니다."""
     if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, 'r', encoding='utf-8') as f:
+        # BUG FIX: utf-8-sig 인코딩을 사용하여 BOM(Byte Order Mark) 문제를 해결
+        with open(DATA_FILE, 'r', encoding='utf-8-sig') as f:
             try:
                 content = f.read()
                 if not content: return create_default_data()
@@ -348,12 +349,7 @@ with top_cols[1]:
 
 st.markdown("---")
 
-# --- 팝업 및 삭제 확인 로직 ---
-if 'initial_popup_shown' not in st.session_state:
-    today = datetime.now()
-    st.toast(f"오늘 날짜는 {today.isocalendar().year}년 {today.isocalendar().week}주차입니다.", icon="🗓️")
-    st.session_state.initial_popup_shown = True
-
+# --- 비밀번호 입력 및 삭제 확인 로직 ---
 if 'requesting_password_for_report_delete' in st.session_state:
     member_to_delete = st.session_state.requesting_password_for_report_delete
     st.warning(f"'{member_to_delete}' 님의 이번 주 보고서를 삭제하려면 비밀번호를 입력하세요.")
@@ -434,7 +430,6 @@ else:
                     with day_cols[i]:
                         st.markdown(f"<div class='header-base {header_class} header-day'><b>{day_names[i]}({dates[i]})</b></div>", unsafe_allow_html=True)
                         st.markdown("<p class='mobile-label'>오전</p>", unsafe_allow_html=True)
-                        # 위젯 키(Key) 수정: 주차 정보(current_week_id)를 포함하여 고유하게 만듦
                         grid_data[f'{day}_am'] = st.text_area(f"{key_prefix}_{member_name}_{day}_am_{current_week_id}", value=grid_data.get(f'{day}_am', ''), height=120, disabled=not is_editable)
                         st.markdown("<p class='mobile-label'>오후</p>", unsafe_allow_html=True)
                         grid_data[f'{day}_pm'] = st.text_area(f"{key_prefix}_{member_name}_{day}_pm_{current_week_id}", value=grid_data.get(f'{day}_pm', ''), height=120, disabled=not is_editable)
@@ -452,7 +447,6 @@ else:
                 header_class = "header-automated" if is_auto else "header-default"
                 cols = st.columns([0.2, 0.8])
                 cols[0].markdown(f"<div class='header-base {header_class} header-summary'><b>{label}</b></div>", unsafe_allow_html=True)
-                # 위젯 키(Key) 수정: 주차 정보(current_week_id)를 포함하여 고유하게 만듦
                 member_plan[key] = cols[1].text_area(f"{key}_{member_name}_{current_week_id}", value=member_plan.get(key, ""), placeholder=placeholder, height=height)
 
             st.markdown("<div style='margin-top: -8px;'></div>", unsafe_allow_html=True)
