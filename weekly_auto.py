@@ -77,7 +77,6 @@ GOOGLE_SHEET_NAME = "주간업무보고_DB"
 
 # --- 4. 핵심 함수 정의 (데이터 처리) ---
 
-@st.cache_resource(ttl=600)
 def connect_to_gsheet():
     """Google Sheets에 연결하고 워크시트 객체를 반환합니다."""
     try:
@@ -414,3 +413,4 @@ else:
 
             st.markdown("---")
         st.markdown("<br>", unsafe_allow_html=True)
+
