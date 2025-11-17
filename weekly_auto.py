@@ -69,7 +69,7 @@ st.markdown("""
 
 
 # --- 3. 데이터 및 상수 정의 ---
-TEAM_ORDER = ["Tridge Pay AE/AM","Team종철", "AE/AM", "BDR", "GD", "BSA"]
+TEAM_ORDER = ["TF","Tridge Pay AE/AM","Team종철", "AE/AM", "BDR", "GD", "BSA"]
 RANK_ORDER = ["책임", "선임", "대리", "사원", "인턴", "기타"]
 FONT_FILE = "NanumGothic.ttf"
 DELETE_PASSWORD = "3002"
@@ -413,5 +413,6 @@ else:
 
             st.markdown("---")
         st.markdown("<br>", unsafe_allow_html=True)
+
 
 
